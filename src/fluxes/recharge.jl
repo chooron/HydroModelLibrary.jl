@@ -1,44 +1,63 @@
 @variables recharge
 
-RechargeFlux(input::namedtuple(:S, :in), params::namedtuple(:p1, :Smax), ::Val{:1}; recharge=recharge) = begin
-    HydroFlux(collect(input) => [recharge], collect(params),
-        exprs=[params.p1 * input.S / params.Smax * input.in]
-    )
-end
-
-RechargeFlux(input::namedtuple(:S, :in), params::namedtuple(:p1, :Smax), ::Val{:2}; recharge=recharge) = begin
-    HydroFlux(collect(input) => [recharge], collect(params),
-        exprs=[((input.S / params.Smax)^params.p1) * input.in]
-    )
-end
-
-RechargeFlux(input::namedtuple(:S), params::namedtuple(:p1), ::Val{:3}; recharge=recharge) = begin
-    HydroFlux(collect(input) => [recharge], collect(params),
+RechargeFlux(::Val{:1}; input::NamedTuple, params::NamedTuple, output=recharge) = begin
+    @assert haskey(input, :S) "RechargeFlux{:1}: input must contain :S"
+    @assert haskey(params, :p1) "RechargeFlux{:1}: params must contain :p1"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
         exprs=[params.p1 * input.S]
     )
 end
 
-RechargeFlux(input::namedtuple(:S), params::namedtuple(:p1), ::Val{:4}; recharge=recharge) = begin
-    HydroFlux(collect(input) => [recharge], collect(params),
-        exprs=[ifelse(input.S > 0, params.p1, 0)]
-    )
-end
-
-RechargeFlux(input::namedtuple(:S1, :S2), params::namedtuple(:p1, :p2), ::Val{:5}; recharge=recharge) = begin
-    HydroFlux(collect(input) => [recharge], collect(params),
-        exprs=[params.p1 * input.S1 * max(0, 1 - input.S2 / params.p2)]
-    )
-end
-
-RechargeFlux(input::namedtuple(:S), params::namedtuple(:p1, :p2), ::Val{:6}; recharge=recharge) = begin
-    HydroFlux(collect(input) => [recharge], collect(params),
+RechargeFlux(::Val{:2}; input::NamedTuple, params::NamedTuple, output=recharge) = begin
+    @assert haskey(input, :S) "RechargeFlux{:2}: input must contain :S"
+    @assert haskey(params, :p1) "RechargeFlux{:2}: params must contain :p1"
+    @assert haskey(params, :p2) "RechargeFlux{:2}: params must contain :p2"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
         exprs=[params.p1 * input.S^params.p2]
     )
 end
 
-RechargeFlux(input::namedtuple(), params::namedtuple(:p1), ::Val{:7}; recharge=recharge) = begin
-    HydroFlux(collect(input) => [recharge], collect(params),
-        exprs=[params.p1]
+RechargeFlux(::Val{:3}; input::NamedTuple, params::NamedTuple, output=recharge) = begin
+    @assert haskey(input, :S) "RechargeFlux{:3}: input must contain :S"
+    @assert haskey(params, :p1) "RechargeFlux{:3}: params must contain :p1"
+    @assert haskey(params, :Smax) "RechargeFlux{:3}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[params.p1 * input.S / params.Smax]
+    )
+end
+
+RechargeFlux(::Val{:4}; input::NamedTuple, params::NamedTuple, output=recharge) = begin
+    @assert haskey(input, :S) "RechargeFlux{:4}: input must contain :S"
+    @assert haskey(params, :p1) "RechargeFlux{:4}: params must contain :p1"
+    @assert haskey(params, :p2) "RechargeFlux{:4}: params must contain :p2"
+    @assert haskey(params, :Smax) "RechargeFlux{:4}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[params.p1 * (input.S / params.Smax)^params.p2]
+    )
+end
+
+RechargeFlux(::Val{:5}; input::NamedTuple, params::NamedTuple, output=recharge) = begin
+    @assert haskey(input, :S) "RechargeFlux{:5}: input must contain :S"
+    @assert haskey(params, :p1) "RechargeFlux{:5}: params must contain :p1"
+    @assert haskey(params, :Smax) "RechargeFlux{:5}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[params.p1 * max(0, input.S - params.Smax)]
+    )
+end
+
+RechargeFlux(::Val{:6}; input::NamedTuple, params::NamedTuple, output=recharge) = begin
+    @assert haskey(input, :S) "RechargeFlux{:6}: input must contain :S"
+    @assert haskey(params, :p1) "RechargeFlux{:6}: params must contain :p1"
+    @assert haskey(params, :p2) "RechargeFlux{:6}: params must contain :p2"
+    @assert haskey(params, :Smax) "RechargeFlux{:6}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[params.p1 * max(0, input.S - params.Smax)^params.p2]
     )
 end
 

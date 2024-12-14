@@ -37,16 +37,27 @@ Linear decrease with threshold cutoff.
 
 @variables capillary
 
-CapillaryFlux(input::namedtuple(:S,), params::namedtuple(:p1,:Smax), ::Val{:scaled}; capillary=capillary) = begin
-    HydroFlux(collect(input) => [capillary], collect(params), exprs=[params.p1 * (1 - input.S / params.Smax)])
+CapillaryFlux(::Val{:scaled}; input::NamedTuple, params::NamedTuple, output=capillary) = begin
+    @assert haskey(input, :S) "CapillaryFlux{:scaled}: input must contain :S"
+    @assert haskey(params, :p1) "CapillaryFlux{:scaled}: params must contain :p1"
+    @assert haskey(params, :Smax) "CapillaryFlux{:scaled}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps, exprs=[params.p1 * (1 - input.S / params.Smax)])
 end
 
-CapillaryFlux(input::namedtuple(:S,), params::namedtuple(:p1,), ::Val{:constant}; capillary=capillary) = begin
-    HydroFlux(collect(input) => [capillary], collect(params), exprs=[ifelse(input.S > 0, params.p1, 0)])
+CapillaryFlux(::Val{:constant}; input::NamedTuple, params::NamedTuple, output=capillary) = begin
+    @assert haskey(input, :S) "CapillaryFlux{:constant}: input must contain :S"
+    @assert haskey(params, :p1) "CapillaryFlux{:constant}: params must contain :p1"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps, exprs=[ifelse(input.S > 0, params.p1, 0)])
 end
 
-CapillaryFlux(input::namedtuple(:S,), params::namedtuple(:p1,:p2), ::Val{:threshold}; capillary=capillary) = begin
-    HydroFlux(collect(input) => [capillary], collect(params), exprs=[ifelse(input.S > params.p2, 0, params.p1 * (1 - input.S / params.p2))])
+CapillaryFlux(::Val{:threshold}; input::NamedTuple, params::NamedTuple, output=capillary) = begin
+    @assert haskey(input, :S) "CapillaryFlux{:threshold}: input must contain :S"
+    @assert haskey(params, :p1) "CapillaryFlux{:threshold}: params must contain :p1"
+    @assert haskey(params, :p2) "CapillaryFlux{:threshold}: params must contain :p2"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps, exprs=[ifelse(input.S > params.p2, 0, params.p1 * (1 - input.S / params.p2))])
 end
 
 export CapillaryFlux

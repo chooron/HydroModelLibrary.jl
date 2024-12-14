@@ -1,24 +1,74 @@
 @variables interception
 
-InterceptionFlux(input::namedtuple(:S, :in), params::namedtuple(:Smax), ::Val{:1}; interception=interception) = begin
-    HydroFlux(collect(input) => [interception], collect(params), exprs=[ifelse(input.S ≥ params.Smax, input.in, 0)])
+InterceptionFlux(::Val{:1}; input::NamedTuple, params::NamedTuple, output=interception) = begin
+    @assert haskey(input, :S) "InterceptionFlux{:1}: input must contain :S"
+    @assert haskey(input, :pet) "InterceptionFlux{:1}: input must contain :pet"
+    @assert haskey(params, :Smax) "InterceptionFlux{:1}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[min(input.S, input.pet)]
+    )
 end
 
-InterceptionFlux(input::namedtuple(:in), params::namedtuple(:p1), ::Val{:2}; interception=interception) = begin
-    HydroFlux(collect(input) => [interception], collect(params), exprs=[max(0, input.in - params.p1)])
+InterceptionFlux(::Val{:2}; input::NamedTuple, params::NamedTuple, output=interception) = begin
+    @assert haskey(input, :S) "InterceptionFlux{:2}: input must contain :S"
+    @assert haskey(input, :pet) "InterceptionFlux{:2}: input must contain :pet"
+    @assert haskey(params, :Smax) "InterceptionFlux{:2}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[min(input.S, input.pet * input.S / params.Smax)]
+    )
 end
 
-InterceptionFlux(input::namedtuple(), params::namedtuple(:p1), ::Val{:3}; interception=interception) = begin
-    HydroFlux(collect(input) => [interception], collect(params), exprs=[params.p1])
+InterceptionFlux(::Val{:3}; input::NamedTuple, params::NamedTuple, output=interception) = begin
+    @assert haskey(input, :S) "InterceptionFlux{:3}: input must contain :S"
+    @assert haskey(input, :pet) "InterceptionFlux{:3}: input must contain :pet"
+    @assert haskey(params, :Smax) "InterceptionFlux{:3}: params must contain :Smax"
+    @assert haskey(params, :p1) "InterceptionFlux{:3}: params must contain :p1"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[min(input.S, input.pet * (input.S / params.Smax)^params.p1)]
+    )
 end
 
-# TODO Interception excess after a time-varying fraction is intercepted
-# InterceptionFlux(input::namedtuple(:in), params::namedtuple(:p1, :p2), ::Val{:4}) = begin
-#     HydroFlux(collect(input) => [interception], collect(params), exprs=[params.p1+(1-params.p1)*cos(2*pi*params.p2)])
-# end
+InterceptionFlux(::Val{:4}; input::NamedTuple, params::NamedTuple, output=interception) = begin
+    @assert haskey(input, :S) "InterceptionFlux{:4}: input must contain :S"
+    @assert haskey(input, :pet) "InterceptionFlux{:4}: input must contain :pet"
+    @assert haskey(params, :Smax) "InterceptionFlux{:4}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[min(input.S, input.pet * (1 - exp(-input.S / params.Smax)))]
+    )
+end
 
-InterceptionFlux(input::namedtuple(:in), params::namedtuple(:p1, :p2), ::Val{:5}; interception=interception) = begin
-    HydroFlux(collect(input) => [interception], collect(params), exprs=[params.p1 * input.in - params.p2])
+InterceptionFlux(::Val{:5}; input::NamedTuple, params::NamedTuple, output=interception) = begin
+    @assert haskey(input, :S) "InterceptionFlux{:5}: input must contain :S"
+    @assert haskey(input, :pet) "InterceptionFlux{:5}: input must contain :pet"
+    @assert haskey(params, :Smax) "InterceptionFlux{:5}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[min(input.S, input.pet * (input.S / params.Smax))]
+    )
+end
+
+InterceptionFlux(::Val{:6}; input::NamedTuple, params::NamedTuple, output=interception) = begin
+    @assert haskey(input, :S) "InterceptionFlux{:6}: input must contain :S"
+    @assert haskey(input, :pet) "InterceptionFlux{:6}: input must contain :pet"
+    @assert haskey(params, :Smax) "InterceptionFlux{:6}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[min(input.S, input.pet * (input.S / params.Smax)^2)]
+    )
+end
+
+InterceptionFlux(::Val{:7}; input::NamedTuple, params::NamedTuple, output=interception) = begin
+    @assert haskey(input, :S) "InterceptionFlux{:7}: input must contain :S"
+    @assert haskey(input, :pet) "InterceptionFlux{:7}: input must contain :pet"
+    @assert haskey(params, :Smax) "InterceptionFlux{:7}: params must contain :Smax"
+    var, ps = split_vars_and_params(input, params)
+    HydroFlux(var => [output], ps,
+        exprs=[min(input.S, input.pet * (input.S / params.Smax)^0.5)]
+    )
 end
 
 export InterceptionFlux
