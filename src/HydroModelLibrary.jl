@@ -21,8 +21,12 @@ map(bucket_names) do name
     include("buckets/$(name).jl")
 end
 
-include("marrmot/collie.jl")
-export Collie
+
+
+
+
+include("marrmot/collie1.jl")
+export Collie1
 
 export Cemaneige, ExpHydro, GR4J, HyMOD, SIMHYD, M50, M100, HBV
 end

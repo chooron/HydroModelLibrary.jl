@@ -688,7 +688,7 @@ version = "2.11.2+0"
 
 [[deps.HydroModels]]
 deps = ["Accessors", "ComponentArrays", "DataInterpolations", "Graphs", "Integrals", "LinearAlgebra", "LinearSolve", "Lux", "LuxCore", "ModelingToolkit", "NNlib", "Random", "Reexport", "RuntimeGeneratedFunctions", "SparseArrays", "StableRNGs", "SymbolicUtils", "Symbolics", "TOML"]
-path = "D:\\Julia\\Julia-1.10.4\\packages\\dev\\HydroModels"
+git-tree-sha1 = "109af33617f39b2a370add0fedfcfddece0c62d1"
 uuid = "7e3cde01-c141-467b-bff6-5350a0af19fc"
 version = "0.1.2"
 

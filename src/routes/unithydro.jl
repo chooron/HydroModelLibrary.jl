@@ -1,22 +1,44 @@
-function uh_1_half(lag; kw...)
-    timeidx = 1:ceil(lag)
-    sf = get(kw, :smooth_func, ifelse_func)
-    value = @.(sf(timeidx - lag) +
-               sf(lag - timeidx) * sf(timeidx) * (timeidx / lag)^2.5)
-    vcat([value[1]], value[2:end] .- value[1:end-1])
+"""
+    UHFunction{uhtype} <: Function
+
+Represents a unit hydrograph function for routing water through a hydrological system.
+
+# Fields
+- `uhtype::Symbol`: A symbol indicating the type of unit hydrograph function. Currently, only `:UH_1_HALF` and `:UH_2_FULL` are supported.
+
+# Methods
+- `(uh::UHFunction{uhtype})(t, lag)`: Computes the unit hydrograph value at time `t` given the lag time `lag`.
+- `get_uh_tmax(uh::UHFunction{uhtype}, lag)`: Returns the maximum time required for computing the unit hydrograph with the given lag time `lag`.
+
+"""
+struct UHFunction{uhtype}
+    function UHFunction(uhtype::Symbol)
+        return new{uhtype}()
+    end
 end
 
-function uh_2_full(lag; kw...)
-    sf = get(kw, :smooth_func, ifelse_func)
-    double_lag = lag * 2
-    timeidx = 1:ceil(double_lag)
-
-    value = @.(sf(timeidx - double_lag) * 1 +
-               sf(double_lag - timeidx) * sf(timeidx - lag) * (1 - 0.5 * abs(2 - timeidx / lag)^2.5) +
-               sf(lag - timeidx) * (0.5 * abs(timeidx / lag)^2.5))
-
-    vcat(value[1], value[2:end] .- value[1:end-1])
+function (uh::UHFunction{:UH_1_HALF})(t, lag)
+    if t - lag > 0
+        typeof(lag)(1)
+    else
+        (t / lag)^2.5
+    end
 end
+
+get_uh_tmax(::UHFunction{:UH_1_HALF}, lag) = ceil(lag)
+
+function (uh::UHFunction{:UH_2_FULL})(t, lag)
+    if t - lag * 2 > 0
+        typeof(lag)(1)
+    elseif t - lag > 0
+        (1 - 0.5 * abs(2 - t / lag)^2.5)
+    else
+        (0.5 * abs(t / lag)^2.5)
+    end
+end
+
+get_uh_tmax(::UHFunction{:UH_2_FULL}, lag) = 2 * ceil(lag)
+
 
 function uh_3_half(lag; kw...)
     sf = get(kw, :smooth_func, ifelse_func)
