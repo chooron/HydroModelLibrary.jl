@@ -6,9 +6,11 @@ using ..HydroModelLibrary: SnowfallFlux, RainfallFlux, MeltFlux, EvaporationFlux
 @parameters tt ddf Smax tc
 
 funcs_1 = [
+    ifelse(temp > tt, 0, prcp),
     SnowfallFlux((P=prcp, T=temp), (p1=tt,), Val(1), output=ps),
     RainfallFlux((P=prcp, T=temp), (p1=tt,), Val(1), output=pr),
-    MeltFlux((S=S1, T=temp), (p1=ddf, p2=tt), Val(1), output=qn),]
+    MeltFlux((S=S1, T=temp), (p1=ddf, p2=tt), Val(1), output=qn)
+]
 
 dfuncs_1 = [StateFlux([ps] => [qn], S1)]
 
