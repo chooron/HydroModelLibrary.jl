@@ -10,8 +10,8 @@ include("../src/HydroModelLibrary.jl")
 
 df = CSV.read("data/marrmot/3604000.csv", DataFrame)
 
-input = (prcp=df[!, "prec"], pet=df[!, "pet"], temp=df[!, "temp"])
-model = HydroModelLibrary.gr4j.model
+input = (P=df[!, "prec"], Ep=df[!, "pet"], T=df[!, "temp"])
+model = HydroModelLibrary.unitedstates.model
 param_bounds = getbounds.(get_params(model))
 random_param_values = map(param_bounds) do param_bound
     rand(Uniform(param_bound[1], param_bound[2]))

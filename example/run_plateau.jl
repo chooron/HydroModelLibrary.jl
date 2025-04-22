@@ -10,14 +10,14 @@ include("../src/HydroModelLibrary.jl")
 
 df = CSV.read("data/marrmot/3604000.csv", DataFrame)
 
-input = (prcp=df[!, "prec"], pet=df[!, "pet"], temp=df[!, "temp"])
-model = HydroModelLibrary.gr4j.model
+input = (P=df[!, "prec"], Ep=df[!, "pet"], T=df[!, "temp"])
+model = HydroModelLibrary.plateau.model
 param_bounds = getbounds.(get_params(model))
 random_param_values = map(param_bounds) do param_bound
     rand(Uniform(param_bound[1], param_bound[2]))
 end
 init_params = ComponentVector(params=NamedTuple{Tuple(get_param_names(model))}(random_param_values))
-init_states = NamedTuple{Tuple(get_state_names(model))}(zeros(length(get_state_names(model)))) |> ComponentVector
+init_states = NamedTuple{Tuple(get_state_names(model))}(ones(length(get_state_names(model))) .* 10) |> ComponentVector
 @info "Input variables: $(HydroModels.get_input_names(model))"
 input_arr = stack(input[HydroModels.get_input_names(model)], dims=1)
 config= (;solver=HydroModelTools.ODESolver(), interp=LinearInterpolation)

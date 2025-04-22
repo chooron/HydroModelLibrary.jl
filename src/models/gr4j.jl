@@ -9,10 +9,14 @@ using ..HydroModels
 @variables es [description = "Actual evaporation from the production store", unit = "mm/d"]
 @variables en [description = "Net evaporation (evapotranspiration minus precipitation when positive)", unit = "mm/d"]
 @variables perc [description = "Percolation from production store to routing", unit = "mm/d"]
-@variables Q9 [description = "Slow flow component routed through unit hydrograph 1", unit = "mm/d"]
-@variables Q1 [description = "Fast flow component routed through unit hydrograph 2", unit = "mm/d"]
+@variables Q9 [description = "Slow flow component", unit = "mm/d"]
+@variables Q1 [description = "Fast flow component", unit = "mm/d"]
+@variables Q9_routed [description = "Slow flow component routed through unit hydrograph 1", unit = "mm/d"]
+@variables Q1_routed [description = "Fast flow component routed through unit hydrograph 2", unit = "mm/d"]
 @variables Qroute [description = "Outflow from routing store", unit = "mm/d"]
+@variables Qt [description = "Total runoff", unit = "mm/d"]
 @variables exch [description = "Water exchange between groundwater and surface water", unit = "mm/d"]
+@variables t
 
 @variables S [description = "Production store level", unit = "mm"]
 @variables R [description = "Routing store level", unit = "mm"]
@@ -36,8 +40,8 @@ bucket1 = @hydrobucket :bucket1 begin
 end
 
 split_flux = @hydroflux begin
-    slowflow ~ (perc + pn - ps) * 0.9
-    fastflow ~ (perc + pn - ps) * 0.1
+    Q9 ~ (perc + pn - ps) * 0.9
+    Q1 ~ (perc + pn - ps) * 0.1
 end
 
 uh_1 = @unithydro begin

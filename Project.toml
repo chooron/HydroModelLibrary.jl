@@ -10,3 +10,8 @@ Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 NamedTupleTools = "d9ec5142-1e00-5aa0-9d6a-321866360f50"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
+
+[compat]
+HydroModels = "0.2"
+SpecialFunctions = "2.5.1"
