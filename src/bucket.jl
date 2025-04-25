@@ -17,5 +17,3 @@ struct SoilwaterBucket{F} <: AbstractHydroBucket where {F<:AbstractHydroFlux}
     infiltration_fluxes::AbstractVector{F}
     evaporation_fluxes::AbstractVector{F}
 end
-
-Struct 

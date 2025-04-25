@@ -19,16 +19,22 @@ using HydroModels
 # end
 step_func(x) = (tanh(5.0 * x) + 1.0) * 0.5
 smoothlogistic_func(S, Smax, r=0.01, e=5.0) = 1 / (1 + exp((S - r * e * Smax) / (r * Smax)))
-
 include("models/alpine1.jl")
-include("models/australia.jl")
-include("models/collie2.jl")
-include("models/collie3.jl")
-include("models/gr4j.jl")
-include("models/newzealand1.jl")
-include("models/plateau.jl")
-include("models/susannah2.jl")
-include("models/unitedstates.jl")
-include("models/wetland.jl")
+# include("models/alpine2.jl")
+# include("models/australia.jl")
+# include("models/collie1.jl")
+# include("models/collie2.jl")
+# include("models/collie3.jl")
+# include("models/gr4j.jl")
+# include("models/gsfb.jl")
+# include("models/lascam.jl")
+# include("models/mopex1.jl")
+# include("models/newzealand1.jl")
+# include("models/newzealand2.jl")
+# include("models/plateau.jl")
+# include("models/susannah2.jl")
+# include("models/tank.jl")
+# include("models/unitedstates.jl")
+# include("models/wetland.jl")
 export alpine1
 end
