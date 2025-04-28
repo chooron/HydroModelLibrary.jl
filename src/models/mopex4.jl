@@ -97,7 +97,7 @@ soil_bucket_5 = @hydrobucket :soil2 begin
     end
 end
 
-model = @hydromodel :newzealand1 begin
+model = @hydromodel :mopex4 begin
     soil_bucket
 end
 
