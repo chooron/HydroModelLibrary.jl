@@ -111,3 +111,9 @@ soil_bucket_6= @hydrobucket :soil begin
         @stateflux Gw ~ Rg - Qg
     end
 end
+
+model = @hydromodel :smar begin
+    bucket
+end
+
+end
