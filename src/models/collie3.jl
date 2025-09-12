@@ -1,6 +1,6 @@
 module collie3
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables P [description = "the precipitation input", unit = "mm/d"]
@@ -15,6 +15,7 @@ using ..HydroModelLibrary: step_func
 @variables Qss [description = "non-linear subsurface flow regulated by runoff coefficients a and b", unit = "mm/d"]
 @variables Qsg [description = "non-linear groundwater flow that relies on the same parameters as subsurface flow uses", unit = "mm"]
 @variables Qt [description = "total runoff", unit = "mm"]
+model_variables = [P, Ep, S, G, Eb, Ev, Qse, Qss, Qsg, Qt]
 
 # Model parameters
 @parameters Smax [description = "Maximum soil moisture storage", bounds = (1, 2000), unit = "mm"]
@@ -23,14 +24,16 @@ using ..HydroModelLibrary: step_func
 @parameters M [description = "Forest fraction", bounds = (0.05, 0.95), unit = "-"]
 @parameters b [description = "Runoff nonlinearity", bounds = (1, 5), unit = "-"]
 @parameters λ [description = "Fraction subsurface flow to groundwater", bounds = (0, 1), unit = "-"]
+model_parameters = [Smax, Sfc, a, M, b, λ]
+
 
 bucket1 = @hydrobucket :bucket1 begin
     fluxes = begin
         @hydroflux Eb ~ S / Smax * (1 - M) * Ep
         @hydroflux Ev ~ min(1.0, S / Sfc) * M * Ep
         @hydroflux Qse ~ step_func(S - Smax) * P
-        @hydroflux Qss ~ (a * max(0.0, S - Sfc))^b
-        @hydroflux Qsg ~ (a * max(0.0, G))^b
+        @hydroflux Qss ~ min((a * max(0.0, S - Sfc))^b, S - Sfc)
+        @hydroflux Qsg ~ min((a * max(0.0, G))^b, G)
         @hydroflux Qt ~ Qse + (1 - λ) * Qss + Qsg
 
     end

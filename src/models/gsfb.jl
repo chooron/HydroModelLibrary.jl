@@ -1,7 +1,7 @@
 
 module gsfb
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables P [description = "precipitation", unit = "mm/d"]
@@ -19,6 +19,7 @@ using ..HydroModelLibrary: step_func
 @variables Dp [description = "deep percolation", unit = "mm/d"]
 @variables Qt [description = "Total flow", unit = "mm/d"]
 
+model_variables = [P, Ep, S, SS, DS, Qdr, Ea, Qs, F, Qb, Dp, Qt]
 # Model parameters
 @parameters C [description = "Recharge coefficient", bounds = (0, 1), unit = "d-1"]
 @parameters NDC [description = "Recharge coefficient", bounds = (0.05, 0.95), unit = "-"]
@@ -27,13 +28,13 @@ using ..HydroModelLibrary: step_func
 @parameters Frate [description = "Recharge rate", bounds = (0, 200), unit = "mm/d"]
 @parameters B [description = "Fraction subsurface flow to stream", bounds = (0, 1), unit = "-"]
 @parameters DPF [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
-@parameters SDRmax [description = "Threshold for subsurface flow generation", bounds = (1, 20), unit = "mm"]
-
+@parameters SDRmax [description = "Threshold for subsurface flow generation", bounds = (1, 200), unit = "mm"]
+model_parameters = [C, NDC, Smax, Emax, Frate, B, DPF, SDRmax]
 # Soil water component
 bucket = @hydrobucket :bucket1 begin
     fluxes = begin
-        @hydroflux Qdr ~ C * DS * (1.0 - min(1.0, S / (NDC * Smax)))
-        @hydroflux Ea ~ min(Ep, Emax * min(S / (NDC * Smax), 1.00))
+        @hydroflux Qdr ~ C * DS * (1.0 - clamp(S / (NDC * Smax), 0, 1))
+        @hydroflux Ea ~ min(Ep, Emax * clamp(S / (NDC * Smax), 0, 1))
         @hydroflux Qs ~ step_func(S - Smax) * P
         @hydroflux F ~ Frate * step_func(S - NDC * Smax)
 

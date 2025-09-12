@@ -1,76 +1,45 @@
-@variables infiltration
+module Infiltration
+using ..HydroModels
 
-InfiltrationFlux(::Val{:1}; input::NamedTuple, params::NamedTuple, output=infiltration) = begin
-    @assert haskey(input, :S) "InfiltrationFlux{:1}: input must contain :S"
-    @assert haskey(params, :p1) "InfiltrationFlux{:1}: params must contain :p1"
-    @assert haskey(params, :p2) "InfiltrationFlux{:1}: params must contain :p2"
-    @assert haskey(params, :Smax) "InfiltrationFlux{:1}: params must contain :Smax"
-    var, ps = split_vars_and_params(input, params)
-    HydroFlux(var => [output], ps,
-        exprs=[params.p1 * exp(-params.p2 * input.S / params.Smax)]
-    )
+"""
+    INF_HMETS
+"""
+function INF_HMETS(;
+    infiltration::Number=first(@variables infiltration),
+    prcpeff::Number=first(@variables prcpeff),
+    waterstorage::Number=first(@variables waterstorage),
+    runoff_coeff::Number=first(@parameters runoff_coeff [description = "Runoff coefficient", bounds = (0, 1), unit = "mm/d"]),
+    max_waterstorage::Number=first(@parameters max_waterstorage [description = "Maximum waterstorage", bounds = (0, 1), unit = "mm"]),
+    flux_name::Symbol=:inf_hmets,
+)
+    @hydroflux flux_name infiltration ~ prcpeff * max(0.0, 1 - runoff_coeff * max(0.0, waterstorage) / max_waterstorage)
 end
 
-InfiltrationFlux(::Val{:2}; input::NamedTuple, params::NamedTuple, output=infiltration) = begin
-    @assert haskey(input, :S) "InfiltrationFlux{:2}: input must contain :S"
-    @assert haskey(input, :used) "InfiltrationFlux{:2}: input must contain :used"
-    @assert haskey(params, :p1) "InfiltrationFlux{:2}: params must contain :p1"
-    @assert haskey(params, :p2) "InfiltrationFlux{:2}: params must contain :p2"
-    @assert haskey(params, :Smax) "InfiltrationFlux{:2}: params must contain :Smax"
-    var, ps = split_vars_and_params(input, params)
-    HydroFlux(var => [output], ps,
-        exprs=[params.p1 * exp(-params.p2 * input.S / params.Smax) - input.used]
-    )
+"""
+    INF_VIC_ARNO
+"""
+function INF_VIC_ARNO(;
+    infiltration::Number=first(@variables infiltration),
+    prcpeff::Number=first(@variables prcpeff),
+    waterstorage::Number=first(@variables waterstorage),
+    exp_coeff::Number=first(@parameters exp_coeff [description = "exp coefficient", bounds = (0, 1), unit = "mm/d"]),
+    max_waterstorage::Number=first(@parameters max_waterstorage [description = "Maximum waterstorage", bounds = (0, 1), unit = "mm"]),
+    flux_name::Symbol=:inf_hmets,
+)
+    @hydroflux flux_name infiltration ~ prcpeff * max(0.0, 1 - max(0.0, 1 - max(0.0, waterstorage) / max_waterstorage)^exp_coeff)
 end
 
-InfiltrationFlux(::Val{:3}; input::NamedTuple, params::NamedTuple, output=infiltration) = begin
-    @assert haskey(input, :S) "InfiltrationFlux{:3}: input must contain :S"
-    @assert haskey(input, :in) "InfiltrationFlux{:3}: input must contain :in"
-    @assert haskey(params, :Smax) "InfiltrationFlux{:3}: params must contain :Smax"
-    var, ps = split_vars_and_params(input, params)
-    HydroFlux(var => [output], ps, exprs=[ifelse(input.S > params.Smax, input.in, 0)])
+"""
+    INF_VIC_ARNO
+"""
+function INF_HBV(;
+    infiltration::Number=first(@variables infiltration),
+    prcpeff::Number=first(@variables prcpeff),
+    waterstorage::Number=first(@variables waterstorage),
+    hbv_beta::Number=first(@parameters hbv_beta [description = "parameter beta in HBV model", bounds = (0, 1), unit = "mm/d"]),
+    max_waterstorage::Number=first(@parameters max_waterstorage [description = "Maximum waterstorage", bounds = (0, 1), unit = "mm"]),
+    flux_name::Symbol=:inf_hmets,
+)
+    @hydroflux flux_name infiltration ~ prcpeff * max(0.0, 1 - max(0.0, max(0.0, waterstorage) / max_waterstorage)^hbv_beta)
 end
-
-InfiltrationFlux(::Val{:4}; input::NamedTuple, params::NamedTuple, output=infiltration) = begin
-    @assert haskey(params, :p1) "InfiltrationFlux{:4}: params must contain :p1"
-    var, ps = split_vars_and_params(input, params)
-    HydroFlux(var => [output], ps, exprs=[params.p1])
 end
-
-InfiltrationFlux(::Val{:5}; input::NamedTuple, params::NamedTuple, output=infiltration) = begin
-    @assert haskey(input, :S1) "InfiltrationFlux{:5}: input must contain :S1"
-    @assert haskey(input, :S2) "InfiltrationFlux{:5}: input must contain :S2"
-    @assert haskey(params, :S1max) "InfiltrationFlux{:5}: params must contain :S1max"
-    @assert haskey(params, :S2max) "InfiltrationFlux{:5}: params must contain :S2max"
-    @assert haskey(params, :p1) "InfiltrationFlux{:5}: params must contain :p1"
-    @assert haskey(params, :p2) "InfiltrationFlux{:5}: params must contain :p2"
-    var, ps = split_vars_and_params(input, params)
-    HydroFlux(var => [output], ps,
-        exprs=[params.p1 * (1 - input.S1 / params.S1max) * abs(input.S2 / params.S2max)^(-params.p2)]
-    )
-end
-
-InfiltrationFlux(::Val{:6}; input::NamedTuple, params::NamedTuple, output=infiltration) = begin
-    @assert haskey(input, :S) "InfiltrationFlux{:6}: input must contain :S"
-    @assert haskey(input, :in) "InfiltrationFlux{:6}: input must contain :in"
-    @assert haskey(params, :Smax) "InfiltrationFlux{:6}: params must contain :Smax"
-    @assert haskey(params, :p1) "InfiltrationFlux{:6}: params must contain :p1"
-    @assert haskey(params, :p2) "InfiltrationFlux{:6}: params must contain :p2"
-    var, ps = split_vars_and_params(input, params)
-    HydroFlux(var => [output], ps,
-        exprs=[params.p1 * abs(input.S / params.Smax)^params.p2 * input.in]
-    )
-end
-
-InfiltrationFlux(::Val{:7}; input::NamedTuple, params::NamedTuple, output=infiltration) = begin
-    @assert haskey(input, :S) "InfiltrationFlux{:7}: input must contain :S"
-    @assert haskey(params, :Smax) "InfiltrationFlux{:7}: params must contain :Smax"
-    @assert haskey(params, :p1) "InfiltrationFlux{:7}: params must contain :p1"
-    @assert haskey(params, :p2) "InfiltrationFlux{:7}: params must contain :p2"
-    var, ps = split_vars_and_params(input, params)
-    HydroFlux(var => [output], ps,
-        exprs=[ifelse(input.S ≥ params.Smax, params.p1 * exp(-params.p2 * input.S / params.Smax), 0)]
-    )
-end
-
-export InfiltrationFlux

@@ -1,6 +1,6 @@
 module alpine2
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables P [description = "precipitation", unit = "mm/d"]
@@ -27,6 +27,9 @@ using ..HydroModelLibrary: step_func
 @parameters tc_in [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
 @parameters tc_bf [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
 
+model_variables = [P, T, Ep, Sn, S, Ps, Pr, Melt, Ea, Qse, Qin, Qbf, Qt]
+model_parameters = [Tt, ddf, Smax, Sfc, tc_in, tc_bf]
+
 # Soil water component
 bucket_1 = @hydrobucket :bucket1 begin
     fluxes = begin
@@ -47,7 +50,6 @@ bucket_2 = @hydrobucket :bucket2 begin
         @hydroflux Qin ~ tc_in * max(S - Sfc, 0.00)
         @hydroflux Qbf ~ tc_bf * S
         @hydroflux Qt ~ Qse + Qin + Qbf
-
     end
 
     dfluxes = begin

@@ -1,6 +1,6 @@
 module collie2
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables S [description = "current storage in the soil moisture"]
@@ -11,12 +11,14 @@ using ..HydroModelLibrary: step_func
 @variables Qse [description = "saturation excess overland flow"]
 @variables Qss [description = "subsurface flow regulated by runoff coefficient a"]
 @variables Qt [description = "Qse+Qss"]
+model_variables = [S, P, Eb, Ev, Ep, Qse, Qss, Qt]
 
 # Model parameters
 @parameters fc [description = "Field capacity, fc as fraction of Smax", bounds = (0.05, 0.95), unit = "mm"]
 @parameters a [description = "Runoff coefficient", bounds = (0, 1), unit = "1/d"]
 @parameters Smax [description = "maximum soil moisture storage", bounds = (1, 2000), unit = "mm"]
 @parameters M [description = "forest fraction", bounds = (0.05, 0.95), unit = "-"]
+model_parameters = [fc, a, Smax, M]
 
 bucket1 = @hydrobucket :bucket1 begin
     fluxes = begin

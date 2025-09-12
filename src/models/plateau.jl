@@ -1,6 +1,6 @@
 module plateau
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables P [description = "Incoming precipitation", unit = "mm/d"]
@@ -19,6 +19,7 @@ using ..HydroModelLibrary: step_func
 @variables Qpgw [description = "Groundwater flow ", unit = "mm/d"]
 @variables Qt [description = "Total runoff", unit = "mm/d"]
 @variables t
+model_variables = [P, Ep, Su, R, Pe, Pi, Pie, Pie_routed, Cap, Et, Spgw, Qpgw, Qt]
 # Model parameters
 @parameters Fmax [description = "Maximum infiltration rate", bounds = (0, 200), unit = "mm/d"]
 @parameters Dp [description = "Interception evaporation", bounds = (0, 5), unit = "mm/d"]
@@ -28,6 +29,7 @@ using ..HydroModelLibrary: step_func
 @parameters Tp [description = "Unit Hydrograph time base", bounds = (1, 120), unit = "d"]
 @parameters C [description = "Capillary rise rate", bounds = (0, 4), unit = "mm/d"]
 @parameters Kp [description = "Runoff coefficient", bounds = (0, 1), unit = "1/d"]
+model_parameters = [Fmax, Dp, Sumax, lp, erf, Tp, C, Kp]
 
 bucket1 = @hydrobucket :bucket1 begin
     fluxes = begin
@@ -46,11 +48,9 @@ end
 
 uh_1 = @unithydro begin
     uh_func = begin
-        ceil(Tp) => 1 / (0.5 * Tp^2) * (0.5 * Tp^2 - 0.5 * (t - 1)^2)
-        Tp => 1 / (0.5 * Tp^2) * (0.5 * t^2 - 0.5 * (t - 1)^2)
+        Tp => 1 / (0.5 * Tp^2) * (0.5 * min(t, Tp)^2 - 0.5 * (t - 1)^2)
     end
-    uh_vars = [Pie]
-    configs = (solvetype=:SPARSE, suffix=:_routed)
+    uh_vars = Pie => Pie_routed
 end
 
 flux1 = @hydroflux Qt ~ Pie_routed + Qpgw

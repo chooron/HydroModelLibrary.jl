@@ -1,6 +1,6 @@
 module mopex1
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables S1 [description = "current storage in soil moisture", unit = "mm"]
@@ -18,14 +18,14 @@ using ..HydroModelLibrary: step_func
 @variables Sc2 [description = "current storage in the slow flow routing reservoir,", unit = "mm"]
 @variables Qu [description = "Routed flow", unit = "mm/d"]
 @variables Qt [description = "Total simulated flow", unit = "mm/d"]
-
+model_variables = [S1, P, ET1, Ep, Q1f, Qw, S2, ET2, Se, Q2u, Sc1, Qf, Sc2, Qu, Qt]
 # Model parameters
 @parameters Sb1 [description = "Maximum soil moisture storage", bounds = (1, 2000), unit = "mm"]
 @parameters tw [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
 @parameters tu [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
 @parameters Se [description = "Maximum groundwater storage capacity", bounds = (1, 2000), unit = "mm"]
 @parameters tc [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
-
+model_parameters = [Sb1, tw, tu, Se, tc]
 # Soil water component
 bucket_1 = @hydrobucket :bucket_1 begin
     fluxes = begin

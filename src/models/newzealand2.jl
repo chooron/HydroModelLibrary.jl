@@ -1,7 +1,7 @@
 module newzealand2
 
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables Si [description = "current interception storage", unit = "mm"]
@@ -18,7 +18,7 @@ using ..HydroModelLibrary: step_func
 @variables Qss [description = "subsurface runoff", unit = "mm/d"]
 @variables Qbf [description = "baseflow", unit = "mm/d"]
 @variables Qt [description = "Total runoff", unit = "mm/d"]
-
+model_variables = [Si, Sm, P, Ep, Eint]
 # Model parameters
 @parameters Imax [description = "Maximum interception capacity", bounds = (0, 5), unit = "mm"]
 @parameters Smax [description = "Maximum soil moisture storage", bounds = (1, 2000), unit = "mm"]
@@ -28,7 +28,7 @@ using ..HydroModelLibrary: step_func
 @parameters b [description = "Runoff nonlinearity", bounds = (1, 5), unit = "-"]
 @parameters tc_bf [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
 @parameters d [description = "Unit Hydrograph time base", bounds = (1, 120), unit = "d"]
-
+model_parameters = [Imax, Smax, Sfc, M, a, b, tc_bf, d]
 # Soil water component
 bucket_1 = @hydrobucket :bucket1 begin
     fluxes = begin
@@ -43,10 +43,10 @@ end
 
 bucket_2 = @hydrobucket :bucket2 begin
     fluxes = begin
-        @hydroflux Eveg ~ M * Ep * min(Sm / Sfc, 1.0)
+        @hydroflux Eveg ~ M * Ep * min(Sm / (Sfc * Smax), 1.0)
         @hydroflux Ebs ~ (Sm / Smax) * (1 - M) * Ep
         @hydroflux Qse ~ P * step_func(Sm - Smax)
-        @hydroflux Qss ~ (a * max(Sm - Sfc, 0.00))^b
+        @hydroflux Qss ~ (a * max(Sm - (Sfc * Smax), 0.00))^b
         @hydroflux Qbf ~ tc_bf * Sm
         @hydroflux Qt ~ Qse + Qss + Qbf
     end

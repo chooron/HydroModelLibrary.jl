@@ -1,5 +1,7 @@
-
 module echo
+using ..HydroModels
+using ..HydroModels: step_func
+
 # Model variables
 @variables I [description = "current interception storage", unit = "mm"]
 @variables T [description = "temperature", unit = "oC"]
@@ -31,32 +33,33 @@ module echo
 @variables Sslow [description = "current storage in the slow runoff reservoir", unit = "mm"]
 @variables Ls [description = "leakage-to-slow-flow", unit = "mm/d"]
 @variables Rs [description = "slow runoff", unit = "mm/d"]
-@variables Q [description = "Total flow", unit = "mm/d"]
-
-
+@variables Qt [description = "Total flow", unit = "mm/d"]
+model_variables = [I, T, P, Ei, Pn, Ep, Hs, Ps, Fs, Ms, Gs, Hw, Pr, Mw, S, Fi, RD, Et_pot, Et, L, Peq, RH, Sfast, Lf, Rf, Ls, Lmax, Sslow, Rs, Qt]
 # Model parameters
-@parameters rho [description = "Maximum interception storage", bounds = (0,5), unit = "mm"]
-@parameters Ts [description = "Threshold temperature for snowfall", bounds = (-3,5), unit = "oC"]
-@parameters Tm [description = "Threshold temperature for snowmelt", bounds = (-3,3), unit = "oC"]
-@parameters as [description = "Degree-day factor for snowmelt", bounds = (0,20), unit = "mm/oC/d"]
-@parameters af [description = "Degree-day factor reduction factor for refreezing", bounds = (0,1), unit = "-"]
-@parameters Gmax [description = "Snow melt through ground heat flux rate", bounds = (0,2), unit = "mm/d"]
-@parameters the [description = "Water holding capacity as fraction of current snow pack", bounds = (0,1), unit = "-"]
-@parameters phi [description = "Maximum Horton type flow rate", bounds = (0,200), unit = "mm/d"]
-@parameters Smax [description = "Maximum soil moisture storage", bounds = (1,2000), unit = "mm"]
-@parameters sw [description = "Wilting point", bounds = (0.05,0.95), unit = "-"]
-@parameters sm [description = "Plant stress point", bounds = (0.05,0.95), unit = "-"]
-@parameters Ksat [description = "Runoff coefficient", bounds = (0,1), unit = "d-1"]
-@parameters c [description = "Runoff non-linearity", bounds = (0,5), unit = "-"]
-@parameters Lmax [description = "Maximum leakage rate", bounds = (0,20), unit = "mm/d"]
-@parameters kf [description = "Runoff coefficient", bounds = (0,1), unit = "d-1"]
-@parameters ks [description = "Runoff coefficient", bounds = (0,1), unit = "d-1"]
+@parameters rho [description = "Maximum interception storage", bounds = (0, 5), unit = "mm"]
+@parameters Ts [description = "Threshold temperature for snowfall", bounds = (-3, 5), unit = "oC"]
+@parameters Tm [description = "Threshold temperature for snowmelt", bounds = (-3, 3), unit = "oC"]
+@parameters an [description = "Degree-day factor for snowmelt", bounds = (0, 20), unit = "mm/oC/d"]
+@parameters af [description = "Degree-day factor reduction factor for refreezing", bounds = (0, 1), unit = "-"]
+@parameters Gmax [description = "Snow melt through ground heat flux rate", bounds = (0, 2), unit = "mm/d"]
+@parameters theta [description = "Water holding capacity as fraction of current snow pack", bounds = (0, 1), unit = "-"]
+@parameters phi [description = "Maximum Horton type flow rate", bounds = (0, 200), unit = "mm/d"]
+@parameters Smax [description = "Maximum soil moisture storage", bounds = (1, 2000), unit = "mm"]
+@parameters sw [description = "Wilting point", bounds = (0.05, 0.95), unit = "-"]
+@parameters sm [description = "Plant stress point", bounds = (0.05, 0.95), unit = "-"]
+@parameters Ksat [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
+@parameters c [description = "Runoff non-linearity", bounds = (0, 5), unit = "-"]
+@parameters Lmax [description = "Maximum leakage rate", bounds = (0, 20), unit = "mm/d"]
+@parameters kf [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
+@parameters ks [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
+model_parameters = [rho, Ts, Tm, an, af, Gmax, theta, phi, Smax, sw, sm, Ksat, c, Lmax, kf, ks]
+
 
 # Soil water component
-soil_bucket_1 = @hydrobucket :interception begin
+bucket_1 = @hydrobucket :bucket_1 begin
     fluxes = begin
-        @hydroflux Ei ~ ifelse(I > 0, Ep, 0)
-        @hydroflux Pn ~ ifelse(I == rho, P, 0)
+        @hydroflux Ei ~ step_func(I) * Ep
+        @hydroflux Pn ~ step_func(I - rho) * P
     end
 
     dfluxes = begin
@@ -64,39 +67,30 @@ soil_bucket_1 = @hydrobucket :interception begin
     end
 end
 
-soil_bucket_2 = @hydrobucket :snowstorage begin
+bucket_2 = @hydrobucket :bucket_2 begin
     fluxes = begin
-        @hydroflux Ps ~ ifelse(T <= Ts, Pn, 0)
-        @hydroflux Ms ~ ifelse((T > Tm) && (Hs > 0), as * (T - Tm), 0)
-        @hydroflux Fs ~ ifelse((T < Tm) && (Hw > 0), af * as * (Tm - T), 0)
-        @hydroflux Gs ~ ifelse(Hs > 0, Gmax, 0)
+        @hydroflux Ps ~ Pn * step_func(Ts - T)
+        @hydroflux Pr ~ Pn * step_func(T - Ts)
+        @hydroflux Ms ~ clamp(an * (T - Tm), 0.0, Hs)
+        @hydroflux Mw ~ step_func(Hw - theta * Hs) * (Pr + Ms)
+        @hydroflux Fs ~ clamp(af * an * (Tm - T), 0.0, Hw)
+        @hydroflux Gs ~ min(Hs, Gmax)
     end
 
     dfluxes = begin
         @stateflux Hs ~ Ps + Fs - Ms - Gs
-    end
-end
-
-soil_bucket_3 = @hydrobucket :waterlayer begin
-    fluxes = begin
-        @hydroflux Pr ~ ifelse(T > Ts, Pn, 0)
-        @hydroflux Mw ~ ifelse(Hw == the * Hs, Pr + Ms, 0)
-    end
-
-    dfluxes = begin
         @stateflux Hw ~ Pr + Ms - Fs - Mw
     end
 end
 
-soil_bucket_4 = @hydrobucket :soilstorage begin
+bucket_3 = @hydrobucket :bucket_3 begin
     fluxes = begin
         @hydroflux Peq ~ Mw + Gs
-        @hydroflux RH ~ ifelse(S < Smax, max(Peq - phi, 0), 0)
+        @hydroflux RH ~ step_func(S - Smax) * max(Peq - phi, 0)
         @hydroflux Fi ~ Peq - RH
-        @hydroflux RD ~ ifelse(S == Smax, Peq, 0)
-        @hydroflux Et_pot ~ Ep - Ei
-        @hydroflux Et ~ min(max(0, Et_pot * (S - sw) / (sm - sw)), Et_pot)
-        @hydroflux L ~ Ksat * S^c
+        @hydroflux RD ~ step_func(S - Smax) * Peq
+        @hydroflux Et ~ (Ep - Ei) * clamp((S - sw) / (sm - sw), 0, 1)
+        @hydroflux L ~ Ksat * max(0.0, S)^c
     end
 
     dfluxes = begin
@@ -104,7 +98,7 @@ soil_bucket_4 = @hydrobucket :soilstorage begin
     end
 end
 
-soil_bucket_5 = @hydrobucket :fastflow begin
+bucket_4 = @hydrobucket :bucket_4 begin
     fluxes = begin
         @hydroflux Ls ~ min(L, Lmax)
         @hydroflux Lf ~ L - Ls
@@ -116,18 +110,22 @@ soil_bucket_5 = @hydrobucket :fastflow begin
     end
 end
 
-soil_bucket_6 = @hydrobucket :flow begin
+bucket_5 = @hydrobucket :bucket_5 begin
     fluxes = begin
-        @hydroflux Rs ~ ks*Sslow
-        @hydroflux Q ~ RH+RD+Rf+Rs
+        @hydroflux Rs ~ ks * Sslow
+        @hydroflux Qt ~ RH + RD + Rf + Rs
     end
 
     dfluxes = begin
-        @stateflux Sslow ~ Ls-Rs
+        @stateflux Sslow ~ Ls - Rs
     end
 end
 model = @hydromodel :echo begin
-    soil_bucket
+    bucket_1
+    bucket_2
+    bucket_3
+    bucket_4
+    bucket_5
 end
 
 end

@@ -1,5 +1,6 @@
 module lascam
 using ..HydroModels
+using ..HydroModels: step_func
 
 # Model variables
 @variables P [description = "precipitation", unit = "mm/d"]
@@ -10,7 +11,9 @@ using ..HydroModels
 @variables A [description = "the current storage in the more permeable upper zone (above less permeable lower zone F)", unit = "mm/d"]
 
 @variables fa [description = "actual infiltration", unit = "mm/d"]
+@variables Aprop [description = "(A - amin) / (amax - amin)", unit = "-"]
 @variables rf [description = "recharge", unit = "mm/d"]
+@variables Ei [description = "leaf evaporation", unit = "mm/d"]
 @variables Eb [description = "evaporation", unit = "mm/d"]
 @variables φss [description = "the fraction saturated catchment area", unit = "-"]
 @variables φc [description = "overland flow", unit = "-"]
@@ -30,6 +33,8 @@ using ..HydroModels
 @variables ra [description = "recharge", unit = "mm/d"]
 @variables qie [description = "infiltration excess on the surface.", unit = "mm/d"]
 @variables Qt [description = "total runoff", unit = "mm/d"]
+
+model_variables = [P, Ep, F, B, A, fa, Aprop, rf, Ei, Eb, φss, φc, fss, F, Pc, Pg, qse, fs, Ef, Ep, qsse, qsie, qb, Ea, qa, ra, qie, Qt]
 
 # Model parameters
 @parameters αf [description = "Catchment-scale infiltration parameter", bounds = (0, 200), unit = "mm/d"]
@@ -56,6 +61,7 @@ using ..HydroModels
 @parameters βa [description = "Subsurface storm flow non-linearity", bounds = (1, 5), unit = "-"]
 @parameters γb [description = "B-store evaporation scaling", bounds = (0, 1), unit = "-"]
 @parameters δb [description = "B-store evaporation non-linearity", bounds = (0, 10), unit = "-"]
+model_parameters = [αf, βf, stot, xa, xf, na, αc, βc, αss, βss, c, αg, βg, γf, δf, rd, αb, βb, γa, δa, αa, βa, γb, δb]
 
 amax = xa * stot
 fmax = xf * (stot - amax)
@@ -64,25 +70,27 @@ amin = na * amax
 
 bucket1 = @hydrobucket :bucket1 begin
     fluxes = begin
-        @hydroflux φc ~ min(1.0, αc * (max(0.0, A - amin) / (amax - amin))^βc)
-        @hydroflux φss ~ min(1.0, αss * (max(0.0, A - amin) / (amax - amin))^βss)
+        @hydroflux Aprop ~ clamp((A - amin) / (amax - amin), 0.0, 1.0)
+        @hydroflux φc ~ min(1.0 - 1e-6, αc * Aprop^βc)
+        @hydroflux φss ~ min(1.0 - 1e-6, αss * Aprop^βss)
         @hydroflux fss ~ clamp(αf * (1 - (B / bmax)) * max(0.0, F / fmax)^(-βf), 0, 1e6)
-        @hydroflux Pg ~ max(αg + βg * P, 0)
+        @hydroflux Pg ~ max(βg * P - αg, 0)
+        @hydroflux Ei ~ P - Pg
         @hydroflux qse ~ φc * Pg
         @hydroflux Pc ~ min(Pg - qse, c)
-        @hydroflux fa ~ min(Pc * max(1, (1 - φss) / (1 - φc), fss))
-        @hydroflux Ef ~ γf * Ep * (max(0.0, F / fmax)^δf)
+        @hydroflux fa ~ min(Pc * max(1, (1 - φss) / (1 - φc)), fss)
+        @hydroflux Ef ~ min(F, γf * Ep * (max(0.0, F / fmax)^δf))
         @hydroflux rf ~ rd * F
 
         @hydroflux qsse ~ (φss - φc) / (1 - φc) * Pc
         @hydroflux qsie ~ max(Pc * (1 - φss) / (1 - φc) - fss, 0)
-        @hydroflux qb ~ βb * (exp(αb * B / bmax) - 1)
-        @hydroflux Ea ~ φc * Ep + γa * Ep * (max(0.0, A / amax)^δa)
-        @hydroflux qa ~ αa * max(0.0, (A - amin) / (amax - amin)) * βa
-        @hydroflux ra ~ φss * fss
+        @hydroflux qb ~ min(B, βb * (exp(αb * B / bmax) - 1))
+        @hydroflux Ea ~ min(A, φc * Ep + γa * Ep * (max(0.0, A / amax)^δa))
+        @hydroflux qa ~ min(A, αa * Aprop^βa)
+        @hydroflux ra ~ min(A, φss * fss)
 
-        @hydroflux Eb ~ γb * Ep * (max(0.0, B / bmax)^δb)
-        @hydroflux qie ~ Pg + qse + Pc
+        @hydroflux Eb ~ min(B, γb * Ep * (max(0.0, B / bmax)^δb))
+        @hydroflux qie ~ Pg - qse - Pc
         @hydroflux Qt ~ qse + qie + qa
     end
     dfluxes = begin

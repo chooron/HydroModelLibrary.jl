@@ -1,2 +1,25 @@
 # HydroModelLibrary.jl
  
+## model library
+
+- [X] [alpine1](src/models/alpine1.jl)
+- [X] [alpine2](src/models/alpine2.jl)
+- [ ] [australia](src/models/australia.jl)
+- [ ] [collie1](src/models/collie1.jl)
+- [ ] [collie2](src/models/collie2.jl)
+- [ ] [collie3](src/models/collie3.jl)
+- [ ] [exphydro](src/models/exphydro.jl)
+- [ ] [gr4j](src/models/gr4j.jl)
+- [ ] [gsfb](src/models/gsfb.jl)
+- [ ] [hbv_edu](src/models/hbv_edu.jl)
+- [ ] [hbv](src/models/hbv.jl)
+- [ ] [lascam](src/models/lascam.jl)
+- [ ] [mopex1](src/models/mopex1.jl)
+- [ ] [mopex3](src/models/mopex3.jl)
+- [ ] [newzealand1](src/models/newzealand1.jl)
+- [ ] [newzealand2](src/models/newzealand2.jl)
+- [ ] [plateau](src/models/plateau.jl)
+- [ ] [susannah2](src/models/susannah2.jl)
+- [ ] [tank](src/models/tank.jl)
+- [ ] [unitedstates](src/models/unitedstates.jl)
+- [ ] [wetland](src/models/wetland.jl)

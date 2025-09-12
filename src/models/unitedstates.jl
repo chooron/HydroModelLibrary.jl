@@ -1,6 +1,6 @@
 module unitedstates
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables P [description = "precipitation", unit = "mm/d"]
@@ -18,14 +18,14 @@ using ..HydroModelLibrary: step_func
 @variables Qse [description = "saturation excess overland flow", unit = "mm/d"]
 @variables Qss [description = "subsurface flow", unit = "mm/d"]
 @variables Qt [description = "Total runoff", unit = "mm/d"]
-
+model_variables = [P, Ep, Sus, Ssat, Eus_ei, Eus_veg, Eus_bs, rg, Susfc, Se, Esat_veg, Esat_bs, Qse, Qss, Qt]
 # Model parameters
 @parameters Alpha_ei [description = "Intercepted fraction of precipitation", bounds = (0, 1), unit = "-"]
 @parameters M [description = "Forest fraction", bounds = (0.05, 0.95), unit = "-"]
 @parameters Smax [description = "Maximum soil moisture storage", bounds = (1, 2000), unit = "mm"]
 @parameters fc [description = "Field capacity as fraction of Smax", bounds = (0.05, 0.95), unit = "-"]
 @parameters Alpha_ss [description = "Runoff coefficient", bounds = (0, 1), unit = "d-1"]
-
+model_parameters = [Alpha_ei, M, Smax, fc, Alpha_ss]
 # Soil water component
 bucket = @hydrobucket :bucket begin
     fluxes = begin

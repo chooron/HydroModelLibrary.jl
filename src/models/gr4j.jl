@@ -2,8 +2,8 @@ module gr4j
 using ..HydroModels
 
 # Model variables
-@variables prcp [description = "Precipitation input", unit = "mm/d"]
-@variables pet [description = "Potential evapotranspiration input", unit = "mm/d"]
+@variables P [description = "Precipitation input", unit = "mm/d"]
+@variables Ep [description = "Potential evapotranspiration input", unit = "mm/d"]
 @variables ps [description = "Net rainfall that enters the production store", unit = "mm/d"]
 @variables pn [description = "Net rainfall (precipitation minus evapotranspiration when positive)", unit = "mm/d"]
 @variables es [description = "Actual evaporation from the production store", unit = "mm/d"]
@@ -16,23 +16,24 @@ using ..HydroModels
 @variables Qroute [description = "Outflow from routing store", unit = "mm/d"]
 @variables Qt [description = "Total runoff", unit = "mm/d"]
 @variables exch [description = "Water exchange between groundwater and surface water", unit = "mm/d"]
-@variables t
-
 @variables S [description = "Production store level", unit = "mm"]
 @variables R [description = "Routing store level", unit = "mm"]
+
+@variables t
+model_variables = [P, Ep, ps, pn, es, en, perc, Q9, Q1, Q9_routed, Q1_routed, Qroute, Qt, exch, S, R]
 # Model parameters
 @parameters x1 [description = "Maximum soil moisture storage", bounds = (1, 2000), unit = "mm"]
 @parameters x2 [description = "Subsurface water exchange", bounds = (-20, 20), unit = "mm/d"]
 @parameters x3 [description = "Routing store depth", bounds = (1, 300), unit = "mm"]
-@parameters x4 [description = "Unit Hydrograph time base = (5, 15)", bounds = (5, 15), unit = "d"]
-
+@parameters x4 [description = "Unit Hydrograph time base = (0, 10)", bounds = (0, 10), unit = "d"]
+model_parameters = [x1, x2, x3, x4]
 bucket1 = @hydrobucket :bucket1 begin
     fluxes = begin
-        @hydroflux pn ~ max(0.0, prcp - pet)
-        @hydroflux en ~ max(0.0, pet - prcp)
-        @hydroflux ps ~ pn * (1 - (S / x1)^2)
-        @hydroflux es ~ en * (2S / x1 - (S / x1)^2)
-        @hydroflux perc ~ ((x1)^-4) / 4 * ((4 / 9)^-4) * (S^5)
+        @hydroflux pn ~ max(0.0, P - Ep)
+        @hydroflux en ~ max(0.0, Ep - P)
+        @hydroflux ps ~ x1 * (1 - (S / x1)^2) * tanh(pn / x1) / (1 + S / x1 * tanh(pn / x1))
+        @hydroflux es ~ S * (2 - S / x1) * tanh(en / x1) / (1 + (1 - S / x1) * tanh(en / x1))
+        @hydroflux perc ~ S * (1 - (1 + ((4 / 9) * (S / x1))^4)^(-0.25))
     end
     dfluxes = begin
         @stateflux S ~ ps - es - perc
@@ -48,8 +49,7 @@ uh_1 = @unithydro begin
     uh_func = begin
         x4 => (t / x4)^2.5
     end
-    uh_vars = [Q9]
-    configs = (solvetype=:SPARSE, suffix=:_routed)
+    uh_vars = Q9 => Q9_routed
 end
 
 uh_2 = @unithydro begin
@@ -57,14 +57,13 @@ uh_2 = @unithydro begin
         2x4 => (1 - 0.5 * (2 - t / x4)^2.5)
         x4 => (0.5 * (t / x4)^2.5)
     end
-    uh_vars = [Q1]
-    configs = (solvetype=:SPARSE, suffix=:_routed)
+    uh_vars = Q1 => Q1_routed
 end
 
 bucket2 = @hydrobucket :bucket2 begin
     fluxes = begin
-        @hydroflux exch ~ x2 * abs(R / x3)^3.5
-        @hydroflux Qroute ~ x3^(-4) / 4 * (R + Q9_routed + exch)^5
+        @hydroflux exch ~ x2 * clamp(R / x3, 0, 1)^3.5
+        @hydroflux Qroute ~ R * clamp(1 - (1 + clamp(R / x3, 0, 1)^4)^(-0.25), 0, 1)
         @hydroflux Qt ~ Qroute + max(Q1_routed + exch, 0.0)
     end
     dfluxes = begin

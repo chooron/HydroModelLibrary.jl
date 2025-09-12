@@ -1,6 +1,6 @@
 module tank
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables S1 [description = "current storage in the upper one", unit = "mm"]
@@ -27,7 +27,7 @@ using ..HydroModelLibrary: step_func
 @variables Y5 [description = "baseflow", unit = "mm/d"]
 
 @variables Qt [description = "total runoff", unit = "mm/d"]
-
+model_variables = [S1, P, E1, E12, Y1, Y2, Ep, S2, F12, E2, F23, Y3, S3, E3, F34, Y4, S4, E4, Y5, Qt]
 # Model parameters
 @parameters a0 [description = "Time parameter for drainage 1>2", bounds = (0, 1), unit = "1/d"]
 @parameters b0 [description = "Time parameter for drainage 2>3", bounds = (0, 1), unit = "1/d"]
@@ -41,7 +41,7 @@ using ..HydroModelLibrary: step_func
 @parameters f2 [description = "Fraction of st that consitutes threshold t2 ", bounds = (0.01, 0.99), unit = "-"]
 @parameters f1 [description = "Fraction of st-t2 that is added to t2 to find threshold 1", bounds = (0.01, 0.99), unit = "-"]
 @parameters f3 [description = "Fraction of st-t1-t2 that consitutes threshold 3", bounds = (0.01, 0.99), unit = "-"]
-
+model_parameters = [a0, b0, c0, a1, fa, fb, fc, fd, st, f2, f1, f3]
 t2 = f2 * st         # Threshold before surface runoff 2 starts [mm]
 t1 = t2 + f1 * (st - t2) # Threshold before surface runoff 1 starts [mm]
 t3 = f3 * (st - t1)    # Threshold before intermediate runoff starts [mm]

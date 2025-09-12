@@ -1,6 +1,6 @@
 module alpine1
 using ..HydroModels
-using ..HydroModelLibrary: step_func
+using ..HydroModels: step_func
 
 # Model variables
 @variables P [description = "Incoming precipitation", unit = "[mm/d]"]
@@ -22,8 +22,10 @@ using ..HydroModelLibrary: step_func
 @parameters Smax [description = "Maximum soil moisture storage", bounds = (1, 2000), unit = "[mm]"]
 @parameters tc [description = "Runoff coefficient", bounds = (0, 1), unit = "[d-1]"]
 
-# Soil water component
-bucket_01 = @hydrobucket :soil begin
+model_variables = [P, T, Ps, Pr, Sn, Sm, Qt, QN, Qse, Qss, Ea, Ep]
+model_parameters = [Tt, ddf, Smax, tc]
+
+upper_soil_bucket = @hydrobucket :upper_soil begin
     fluxes = begin
         @hydroflux Ps ~ step_func(Tt - T) * P
         @hydroflux QN ~ min(step_func(T - Tt) * ddf * (T - Tt), Sn)
@@ -32,7 +34,8 @@ bucket_01 = @hydrobucket :soil begin
         @stateflux Sn ~ Ps - QN
     end
 end
-bucket_02 = @hydrobucket :soil begin
+# Soil water component
+lower_soil_bucket = @hydrobucket :lower_soil begin
     fluxes = begin
         @hydroflux Pr ~ step_func(T - Tt) * P
         @hydroflux Ea ~ step_func(Sm) * Ep
@@ -44,12 +47,10 @@ bucket_02 = @hydrobucket :soil begin
     end
 end
 
-flux_01 = @hydroflux Qt ~ Qse + Qss
-
 model = @hydromodel :alpine1 begin
-    bucket_01
-    bucket_02
-    flux_01
+    upper_soil_bucket
+    lower_soil_bucket
+    @hydroflux Qt ~ Qse + Qss
 end
 
 end
