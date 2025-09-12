@@ -72,18 +72,6 @@ AVAILABLE_ROUTERS = [
 ]
 export AVAILABLE_MODELS, AVAILABLE_ROUTERS
 
-function load_model(model_name::Symbol)
-    if model_name in AVAILABLE_MODELS
-        if !isdefined(HydroModelLibrary, model_name)
-            model_path = joinpath(@__DIR__, "models", "$(model_name).jl")
-            include(model_path)
-        end
-        return getfield(HydroModelLibrary, model_name)
-    else
-        throw(ArgumentError("Model $model_name is not available"))
-    end
-end
-
 include("routes/gamma_uh.jl")
 export GammaHydrograph
 
