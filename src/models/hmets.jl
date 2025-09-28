@@ -44,7 +44,7 @@ model_parameters = [ddfmin, ddfplus, Tbm, Kcum, fcmin, fcplus, Ccum, Tbf, Kf, Fe
 @variables SNF [description = "Snowfall in mm/day"]
 @variables RAIN [description = "Rainfall in mm/day"]
 @variables Ep [description = "Potential Evapotranspiration in mm/day"]
-
+@variables SNF RAIN DDF PSM REF SWI WAR CMELT SNW WIS
 # State variables
 @variables SNW [description = "Snow water equivalent in mm"]
 @variables LV [description = "Vadose zone level in mm"]
@@ -78,35 +78,34 @@ fcmax = fcmin + fcplus
 
 snow_bucket = @hydrobucket begin
     fluxes = begin
-        @hydroflux begin
-            RAIN ~ step_func(T) * P
-            SNF ~ step_func(-T) * P
-        end
-        @hydroflux POR ~ max(0, Kf * max(0,Tbf - (T / 2))^Fe)
-        @hydroflux DDF ~ ddfmin * (1 + Kcum * SNW)
-        @hydroflux PSM ~ max(0, DDF * (T - Tbm))
-        @hydroflux WRF ~ max(fcmin, fcmax * (1 - Ccum * SNW))
-        @hydroflux WAR ~ max(0, SNW + RAIN - WRF)
+        @hydroflux SNF ~ step_func(-T) * P
+        @hydroflux RAIN ~ step_func(T) * P
+        @hydroflux DDF ~ min(ddfmin, ddfmax * (1 + Kcum * CMELT))
+        @hydroflux PSM ~ min(max(0.0, SNW), DDF * max(0.0, T - Tbm))
+        @hydroflux REF ~ min(max(0.0, WIS), Kf * max(0.0, Tbf - T)^Fe)
+        @hydroflux SWI ~ max(fcmin, fcmax * (1 - Ccum * CMELT))
+        @hydroflux WAR ~ max(0.0, WIS + RAIN - SWI * SNW)
     end
-
     dfluxes = begin
-        @stateflux SNW ~ POR + SNF - PSM
+        @stateflux SNW ~ SNF - PSM + REF
+        @stateflux WIS ~ PSM + RAIN - REF - WAR
+        @stateflux CMELT ~ ifelse(SNW > 0, PSM, -CMELT)
     end
 end
 
 soil_bucket = @hydrobucket begin
     fluxes = begin
-        @hydroflux RET ~ ETeff * Ep
-        @hydroflux H1 ~ min(LV, cr * (LV / LVmax) * WAR)
+        @hydroflux RET ~ min(WAR, ETeff * Ep)
+        @hydroflux H1 ~ cr * clamp(LV / LVmax, 0.0, 1.0) * WAR
         @hydroflux INF ~ WAR - H1 - RET
         @hydroflux GR ~ cvp * LV
-        @hydroflux H2 ~ min(LV, cr * INF * (LV / LVmax))
+        @hydroflux H2 ~ min(LV, cr * INF * clamp(LV / LVmax, 0.0, 1.0))
         @hydroflux H3 ~ cv * LV
         @hydroflux H4 ~ cp * LP
     end
 
     dfluxes = begin
-        @stateflux LV ~ INF - RET - H1 - H2 - H3 - GR
+        @stateflux LV ~ INF - H2 - H3 - GR
         @stateflux LP ~ GR - H4
     end
 end
@@ -122,6 +121,4 @@ model = @hydromodel begin
     gamma_uh2
     q_flux
 end
-
-# todo unit hydrograph
 end

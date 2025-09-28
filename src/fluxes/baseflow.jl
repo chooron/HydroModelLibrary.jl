@@ -16,6 +16,8 @@ end
 
 """
     Linear storage
+
+    Using Models: Apline1
 """
 function BASE_LINEAR(;
     baseflow::Number=first(@variables baseflow),

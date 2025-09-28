@@ -1,4 +1,4 @@
-module GammaUnitHydro
+module gamma_uh
 
 using ..HydroModels
 using ..HydroModelCore

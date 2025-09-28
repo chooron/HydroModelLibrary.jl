@@ -1,5 +1,5 @@
 # Import required packages
-using CSV, DataFrames
+using CSV, DataFrames, JLD2
 using ComponentArrays
 using Distributions
 using HydroModels, HydroModelTools
@@ -14,20 +14,18 @@ df = CSV.read("data/marrmot/3604000.csv", DataFrame)
 tidx = rem.(0:length(df[!, "prec"])-1, 365) .+ 1
 input = (P=df[!, "prec"], Ep=df[!, "pet"], T=df[!, "temp"], Tidx=tidx)
 
+test_input = stack(input, dims=1)
+
 # Model Setup: Load and initialize the Penman model
-model_module = HydroModelLibrary.load_model(:penman, reload=true)
+model_nm = "sacramento"
+model_module = HydroModelLibrary.load_model(Symbol(model_nm), reload=true)
 model = model_module.model
 model_variables = model_module.model_variables
 model_parameters = model_module.model_parameters
 
 # Parameter Preparation: Define parameter names and bounds, initialize parameters
-model_params_names = tosymbol.(model_parameters)
-model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModels.getbounds.(model_parameters))
-random_param_values = map(zip(model_params_names, model_params_bounds)) do (param_name, param_bound)
-    param_name => rand(Uniform(param_bound[1], param_bound[2]))
-end |> NamedTuple
-init_params = ComponentVector(params=random_param_values)
-init_params = JLD2.load("cache/calibrate/penman/sol.jld2", "opt_params")
+init_params = HydroModelLibrary.get_random_params(model_nm)
+init_params = JLD2.load("cache/calibrate/$model_nm/sol.jld2", "opt_params")
 @info "init_params: $init_params"
 
 # Model Input/Output Setup: Define model inputs, states, and outputs
@@ -45,11 +43,12 @@ result = model(input_arr, init_params, initstates=init_states, config=config)
 # Output Processing: Convert results to DataFrame and compute summaries
 model_output_names = vcat(model_state_names, model_output_names) |> Tuple
 output_df = DataFrame(NamedTuple{model_output_names}(eachslice(result, dims=1)))
+r2_func(y, y_hat) = sum((y .- y_hat) .^ 2) ./ sum((y .- mean(y)) .^ 2)
 @info "sum of flow" df[!, "flow"] |> sum
 @info "sum of Qt" output_df[!, "Qt"] |> sum
 @info "sum of prec" df[!, "prec"] |> sum
-@info r2_func(df[!, "flow"], output_df[!, "Qt"])
+@info 1 - r2_func(df[!, "flow"], output_df[!, "Qt"])
 
 # Visualization: Plot observed flow and model output
-plot(df[!, "flow"], label="flow")
-plot!(output_df[!, "Qt"], label="Qt")
+plot(df[750:1000, "flow"], label="flow")
+plot!(output_df[750:1000, "Qt"], label="Qt")

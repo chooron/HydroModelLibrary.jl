@@ -1,3 +1,4 @@
+module common_uh
 @variables t
 
 function uh_1_half(; input, output, lag, name=:uh_1_half)
@@ -93,4 +94,5 @@ function gamma_uh(; input, output, alpha, beta, name=:gamma_uh)
         end
         uh_vars = input => output
     end
+end
 end

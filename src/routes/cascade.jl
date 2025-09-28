@@ -1,30 +1,30 @@
-function CascadeRouteFlux(
-    input::Num,
-    output::Union{Num,Nothing}=nothing,
-)
-    @parameters k [description = "水库的平均滞留时间"]
-    @parameters n [description = "水库的数目"]
+module nash_cascade
 
-    if isnothing(output)
-        input_name = Symbolics.tosymbol(input, escape=false)
-        output_name = Symbol(input_name, :_routed)
-        output = first(@variables $output_name)
+using .HydroModelCore
+using .HydroModelLibrary: tosymbol
+
+struct NashCascade <: HydroModelCore.AbstractComponent
+
+    function NashCascade(
+        input::T, output::T, k::T, n::T,
+        name::Symbol=:nash_cascade
+    ) where T
+        infos = HydroModelCore.HydroInfos(
+            inputs=tosymbol(input),
+            outputs=tosymbol(output),
+            params=tosymbol.([k, n])
+        )
+        return new{typeof(infos)}(name, lenF, infos)
     end
 
-    return RouteFlux(
-        input,
-        [k, n],
-        Num[],
-        routetype=:cascade,
-        output=output
-    )
 end
 
-function (flux::RouteFlux{:cascade})(input::AbstractMatrix, pas::ComponentVector; kwargs::NamedTuple=NamedTuple())
-    n = Int(pas[:params].n)
+function (cascade::NashCascade)(input::AbstractArray{T, 2}, pas::ComponentVector; config::NamedTuple=NamedTuple()) where T
+    n = Int(pas.params.n)
     init_states = zeros(n)
     input_len = size(input)[2]
     input_itp = LinearInterpolation(input[1, :], collect(1:input_len))
+    config = get(config, :solver, HydroModels.ManualSolver())
 
     function nash_unithydro!(du, u, p, t)
         k = p
@@ -40,30 +40,4 @@ function (flux::RouteFlux{:cascade})(input::AbstractMatrix, pas::ComponentVector
     reshape(sol_vec, 1, input_len)
 end
 
-function get_rflux_initstates(::RouteFlux{:cascade}; input::AbstractMatrix, pas::ComponentVector, stypes::AbstractVector{Symbol}, ptypes::AbstractVector{Symbol})
-    reduce(vcat, [zeros(eltype(pas), Int(pas[:params][ptype][:n])) for ptype in ptypes])
-end
-
-function get_rflux_func(::RouteFlux{:cascade}; pas::ComponentVector, ptypes::AbstractVector{Symbol})
-    #* node_num * ts_len
-    node_iuh_nums = [pas[:params][ptype][:n] for ptype in ptypes]
-    start_idxes = Int[1; cumsum(node_iuh_nums)[1:end-1] .+ 1]
-    end_idxes = Int.(cumsum(node_iuh_nums))
-    iuh_states_idxes = [Int.(sidx:eidx) for (sidx, eidx) in zip(start_idxes, end_idxes)]
-
-    function rflux_func(uh_states, q_in, q_gen, p)
-        k_ps = [p[ptype][:k] for ptype in ptypes]
-        dstates = zeros(eltype(uh_states), length(uh_states))
-        dstates[start_idxes] = @.(q_in + q_gen - uh_states[start_idxes] / k_ps)
-        for (i, (k, n)) in enumerate(zip(k_ps, node_iuh_nums))
-            iuh_states_idx = iuh_states_idxes[i]
-            for j in 2:Int(n)
-                dstates[iuh_states_idx[j]] = (uh_states[iuh_states_idx[j-1]] - uh_states[iuh_states_idx[j]]) / k
-            end
-        end
-        q_out = [k_ps[i] * uh_states[end_idxes[i]] for i in eachindex(k_ps)]
-        q_out, dstates
-    end
-
-    return rflux_func
 end

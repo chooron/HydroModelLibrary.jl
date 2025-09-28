@@ -35,13 +35,13 @@ bucket_2 = @hydrobucket :bucket_2 begin
         @hydroflux Pr ~ step_func(T - tcrit) * P
         @hydroflux Et1 ~ clamp(S1 / Sb1, 0.0, 1.0) * Ep
         @hydroflux Et2 ~ clamp(S2 / Se, 0.0, 1.0) * Ep
-        @hydroflux Q1f ~ step_func(S1 - Sb1) * P
+        @hydroflux Q1f ~ step_func(S1 - Sb1) * (Pr + Qn)
         @hydroflux Q2u ~ tu * S2
         @hydroflux Qw ~ tw * S1
     end
 
     dfluxes = begin
-        @stateflux S1 ~ Pr - Et1 - Q1f - Qw
+        @stateflux S1 ~ Pr + Qn - Et1 - Q1f - Qw
         @stateflux S2 ~ Qw - Et2 - Q2u
     end
 end

@@ -461,14 +461,20 @@ version = "0.2.4"
 deps = ["ComponentArrays", "DocStringExtensions", "Graphs", "HydroModelCore", "Lux", "NNlib", "Random", "Reexport", "RuntimeGeneratedFunctions", "SpecialFunctions", "SymbolicUtils", "Symbolics", "TOML"]
 path = "D:\\Julia\\packages\\dev\\HydroModels"
 uuid = "7e3cde01-c141-467b-bff6-5350a0af19fc"
-version = "0.4.1"
+version = "0.4.3"
 
     [deps.HydroModels.extensions]
     HydroModelsBMIExt = ["BasicModelInterface", "Dates"]
+    HydroModelsOptimizationExt = ["Optimization", "SciMLBase", "ComponentArrays"]
+    HydroModelsOrdinaryDiffEqExt = ["SciMLBase", "OrdinaryDiffEq", "SciMLSensitivity"]
 
     [deps.HydroModels.weakdeps]
     BasicModelInterface = "59605e27-edc0-445a-b93d-c09a3a50b330"
     Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+    Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
+    OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+    SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+    SciMLSensitivity = "1ed8b502-d754-442c-8d5d-10ac956f44a1"
 
 [[deps.HypergeometricFunctions]]
 deps = ["LinearAlgebra", "OpenLibm_jll", "SpecialFunctions"]

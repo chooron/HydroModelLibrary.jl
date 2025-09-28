@@ -63,7 +63,7 @@ end
 bucket2 = @hydrobucket :bucket2 begin
     fluxes = begin
         @hydroflux exch ~ x2 * clamp(R / x3, 0, 1)^3.5
-        @hydroflux Qroute ~ R * clamp(1 - (1 + clamp(R / x3, 0, 1)^4)^(-0.25), 0, 1)
+        @hydroflux Qroute ~ R * clamp(1 - (1 + clamp(R / x3, 0, Inf)^4)^(-0.25), 0, 1)
         @hydroflux Qt ~ Qroute + max(Q1_routed + exch, 0.0)
     end
     dfluxes = begin

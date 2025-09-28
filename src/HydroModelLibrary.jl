@@ -5,19 +5,52 @@ module HydroModelLibrary
 using HydroModels
 using HydroModelCore
 
+using ComponentArrays
+
+using NNlib
+using Symbolics: tosymbol
+
+## -------------------------- smooth function -------------------------- ##
 step_func(x) = (tanh(5.0 * x) + 1.0) * 0.5
 smoothlogistic_func(S, Smax, r=0.01, e=5.0) = 1 / (1 + exp((S - r * e * Smax) / (r * Smax)))
 
-# 定义一个函数来按需加载模型
+## -------------------------- hydrological model -------------------------- ##
+
 function load_model(model_name::Symbol; reload=false)
-    # 检查模块是否已经加载，如果没有则加载
     if !isdefined(HydroModelLibrary, model_name) || reload
         model_path = joinpath(@__DIR__, "models", "$(model_name).jl")
         include(model_path)
     end
-    # 返回模块
     return getfield(HydroModelLibrary, model_name)
 end
+
+function get_params_bounds(model_name::Symbol)
+    if !isdefined(HydroModelLibrary, model_name)
+        load_model(model_name)
+    end
+    model_parameters = getfield(HydroModelLibrary, model_name).model_parameters
+    model_params_names = tosymbol.(model_parameters)
+    model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModelCore.getbounds.(model_parameters))
+    return model_params_bounds
+end
+
+function get_random_params(model_name::Symbol)
+    if !isdefined(HydroModelLibrary, model_name)
+        load_model(model_name)
+    end
+    model_parameters = getfield(HydroModelLibrary, model_name).model_parameters
+    model_params_names = tosymbol.(model_parameters)
+    model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModelCore.getbounds.(model_parameters))
+    random_param_values = map(zip(model_params_names, model_params_bounds)) do (param_name, param_bound)
+        param_name => rand(param_bound[1]:param_bound[2])
+    end |> NamedTuple
+    init_params = ComponentVector(params=random_param_values)
+    return init_params
+end
+
+load_model(model_name::String; reload=false) = load_model(Symbol(model_name); reload=reload)
+get_random_params(model_name::String) = get_random_params(Symbol(model_name))
+get_params_bounds(model_name::String) = get_params_bounds(Symbol(model_name))
 
 AVAILABLE_MODELS = [
     :alpine1,

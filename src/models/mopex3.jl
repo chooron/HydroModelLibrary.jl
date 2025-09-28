@@ -56,53 +56,35 @@ end
 bucket2 = @hydrobucket :bucket2 begin
     fluxes = begin
         @hydroflux Pr ~ step_func(T - tcrit) * P
-        @hydroflux ET1 ~ (S1 / Smax1) * Ep
-        @hydroflux Q1f ~ step_func(S1 - Smax1) * (Pr + Qn)
+        @hydroflux ET1 ~ min(max(0.0, S1), (S1 / Smax1) * Ep)
+        @hydroflux ET2 ~ min(max(0.0, S2), (S2 / (se * Smax2)) * Ep)
         @hydroflux Qw ~ tw * S1
-    end
-    dfluxes = begin
-        @stateflux S1 ~ Pr - ET1 - Q1f - Qw
-    end
-end
-
-bucket3 = @hydrobucket :bucket3 begin
-    fluxes = begin
-        @hydroflux ET2 ~ (S2 / (se * Smax2)) * Ep
         @hydroflux Q2u ~ tu * S2
+        @hydroflux Q1f ~ step_func(S1 - Smax1) * (Pr + Qn)
         @hydroflux Q2f ~ step_func(S2 - Smax2) * Qw
     end
     dfluxes = begin
+        @stateflux S1 ~ Pr + Qn - ET1 - Q1f - Qw
         @stateflux S2 ~ Qw - ET2 - Q2u - Q2f
     end
 end
 
-bucket4 = @hydrobucket :bucket4 begin
+bucket3 = @hydrobucket :bucket4 begin
     fluxes = begin
         @hydroflux Qf ~ tc * Sc1
+        @hydroflux Qu ~ tc * Sc2
+        @hydroflux Qt ~ Qf + Qu
     end
     dfluxes = begin
         @stateflux Sc1 ~ Q1f + Q2f - Qf
-    end
-end
-
-bucket5 = @hydrobucket :bucket5 begin
-    fluxes = begin
-        @hydroflux Qu ~ tc * Sc2
-    end
-    dfluxes = begin
         @stateflux Sc2 ~ Q2u - Qu
     end
 end
-
-flux1 = @hydroflux Qt ~ Qf + Qu
 
 model = @hydromodel :mopex3 begin
     bucket1
     bucket2
     bucket3
-    bucket4
-    bucket5
-    flux1
 end
 
 end

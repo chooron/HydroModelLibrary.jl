@@ -48,8 +48,7 @@ tmax = tmin + trange
 bucket1 = @hydrobucket :bucket1 begin
     fluxes = begin
         @hydroflux Ps ~ step_func(tcrit - T) * P
-        @hydroflux Qn ~ ddf * min(0.0, T - tcrit)
-        @hydroflux Epc ~ Ep * clamp((T - tmin) / (tmax - tmin), 0, 1)
+        @hydroflux Qn ~ min(max(0.0, Sn), ddf * max(0.0, T - tcrit))
     end
     dfluxes = begin
         @stateflux Sn ~ Ps - Qn
@@ -59,58 +58,39 @@ end
 bucket2 = @hydrobucket :bucket2 begin
     fluxes = begin
         @hydroflux Pr ~ step_func(T - tcrit) * P
-        @hydroflux ET1 ~ S1 / sb1 * Epc
+        @hydroflux Epc ~ Ep * clamp((T - tmin) / (tmax - tmin), 0, 1)
+        @hydroflux ET1 ~ min(max(0.0, S1), clamp(S1 / sb1, 0.0, 1.0) * Epc)
+        @hydroflux ET2 ~ min(max(0.0, S2), clamp(S2 / (se*sb2), 0.0, 1.0) * Ep)
         # todo 加入时间？
         # @hydroflux I ~ max(0, i_alpha + (1 - i_alpha) * sin(2π * (t + I_s / (365 / d))))
-        @hydroflux Q1f ~ step_func(S1 - sb1) * P
         @hydroflux Qw ~ tw * S1
-    end
-    dfluxes = begin
-        @stateflux S1 ~ Pr - ET1 - Q1f - Qw
-    end
-end
-
-bucket3 = @hydrobucket :bucket3 begin
-    fluxes = begin
-        @hydroflux ET2 ~ S2 / se * Epc
-        @hydroflux Q2u ~ tu * S2
+        @hydroflux Q1f ~ step_func(S1 - sb1) * (Pr + Qn)
         @hydroflux Q2f ~ step_func(S2 - sb2) * Qw
+        @hydroflux Q2u ~ tu * S2
     end
     dfluxes = begin
+        @stateflux S1 ~ Pr + Qn - ET1 - Q1f - Qw
         @stateflux S2 ~ Qw - ET2 - Q2u - Q2f
     end
 end
 
-bucket4 = @hydrobucket :bucket4 begin
+bucket3 = @hydrobucket :bucket4 begin
     fluxes = begin
         @hydroflux Qf ~ tc * Sc1
+        @hydroflux Qu ~ tc * Sc2
+        @hydroflux Qt ~ Qf + Qu
     end
     dfluxes = begin
         @stateflux Sc1 ~ Q1f + Q2f - Qf
-    end
-end
-
-
-
-bucket5 = @hydrobucket :bucket5 begin
-    fluxes = begin
-        @hydroflux Qu ~ tc * Sc2
-    end
-    dfluxes = begin
         @stateflux Sc2 ~ Q2u - Qu
+
     end
 end
 
-flux1 = @hydroflux Qt ~ Qf + Qu
-
-
-model = @hydromodel :plateau begin
+model = @hydromodel :mopex5 begin
     bucket1
     bucket2
     bucket3
-    bucket4
-    bucket5
-    flux1
 end
 
 end

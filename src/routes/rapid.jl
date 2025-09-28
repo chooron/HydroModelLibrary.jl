@@ -1,4 +1,4 @@
-module RapidRoute
+module rapid
 
 using ..HydroModels
 using ..HydroModels: AbstractRoute

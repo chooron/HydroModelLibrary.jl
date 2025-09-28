@@ -30,10 +30,9 @@ model_parameters = [Sb, Sfc, M, a, b, r]
 bucket1 = @hydrobucket :bucket1 begin
     fluxes = begin
         @hydroflux Ebs ~ min(Suz, Suz / Sb * (1 - M) * Ep)
-        @hydroflux Eveg ~ min(Suz, min(1.0, Suz / Sfc) * M * Ep)
+        @hydroflux Eveg ~ min(Suz, min(1.0, Suz / (Sfc * Sb)) * M * Ep)
         @hydroflux Qse ~ step_func(Suz - Sb) * P
-        @hydroflux Qss ~ min(max(0.0, Suz - Sfc), (max(0.0, Suz - Sfc) / a)^(1 / b))
-        @hydroflux Ebs ~ min(Suz, Suz / Sb * (1 - M) * Ep)
+        @hydroflux Qss ~ min(max(0.0, Suz - Sfc * Sb), (max((Suz - Sfc * Sb) / a, 0.0))^(1 / b))
         @hydroflux Qr ~ r * Qss
         @hydroflux Qb ~ min(max(0.0, Sgw), ((1 / a) * max(0.0, Sgw))^(1 / b))
     end
