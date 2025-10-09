@@ -15,7 +15,7 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 [compat]
 ComponentArrays = "0.15"
 HydroModelCore = "0.2"
-HydroModels = "0.4"
+HydroModels = "0.4.3"
 NNlib = "0.9"
 Reexport = "1"
 SpecialFunctions = "2"
