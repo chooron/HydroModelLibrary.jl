@@ -121,4 +121,9 @@ function load_router(router_name::Symbol)
 end
 export load_model, load_router
 
+## -------------------------- sample data loading -------------------------- ##
+include("sample_data.jl")
+export load_sample_data, list_sample_data, get_sample_data_info, 
+       load_sample_data_for_model, AVAILABLE_SAMPLE_DATA
+
 end
