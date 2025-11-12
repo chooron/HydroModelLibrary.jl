@@ -4,7 +4,7 @@
 本文件展示如何使用 HydroModelLibrary 中的示例数据加载功能。
 """
 
-using HydroModelLibrary
+include("../src/HydroModelLibrary.jl")
 
 # ============================================================
 # 1. 查看所有可用的示例数据集

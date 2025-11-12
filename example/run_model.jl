@@ -2,9 +2,8 @@
 using CSV, DataFrames, JLD2
 using ComponentArrays
 using Distributions
-using HydroModels, HydroModelTools
+using HydroModels
 using DataInterpolations
-using Symbolics: tosymbol
 using Accessors
 using Plots
 include("../src/HydroModelLibrary.jl")
@@ -37,7 +36,7 @@ init_states = NamedTuple{Tuple(model_state_names)}(zeros(length(model_state_name
 
 # Model Execution: Prepare input array and run the model
 input_arr = stack(input[model_input_names], dims=1)
-config = (; solver=HydroModelTools.ODESolver(), interp=LinearInterpolation)
+config = HydroConfig(solver=HydroModels.ODESolver, interpolator=Val(LinearInterpolation))
 result = model(input_arr, init_params, initstates=init_states, config=config)
 
 # Output Processing: Convert results to DataFrame and compute summaries
