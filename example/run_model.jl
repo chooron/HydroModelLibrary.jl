@@ -16,7 +16,7 @@ input = (P=df[!, "prec"], Ep=df[!, "pet"], T=df[!, "temp"], Tidx=tidx)
 test_input = stack(input, dims=1)
 
 # Model Setup: Load and initialize the Penman model
-model_nm = "sacramento"
+model_nm = "hbv"
 model_module = HydroModelLibrary.load_model(Symbol(model_nm), reload=true)
 model = model_module.model
 model_variables = model_module.model_variables
@@ -49,5 +49,5 @@ r2_func(y, y_hat) = sum((y .- y_hat) .^ 2) ./ sum((y .- mean(y)) .^ 2)
 @info 1 - r2_func(df[!, "flow"], output_df[!, "Qt"])
 
 # Visualization: Plot observed flow and model output
-plot(df[750:1000, "flow"], label="flow")
-plot!(output_df[750:1000, "Qt"], label="Qt")
+plot(df[1:1000, "flow"], label="flow")
+plot!(output_df[1:1000, "Qt"], label="Qt")

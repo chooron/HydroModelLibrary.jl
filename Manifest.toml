@@ -2,7 +2,7 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "376398130eab2a5230367902970b390f756a3ccc"
+project_hash = "ea6de8f67fdaea863833b48bcc73d29b8106cf84"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "27cecae79e5cc9935255f90c53bb831cc3c870d7"
@@ -443,7 +443,7 @@ uuid = "57609f06-44cb-4626-8f6d-47ea844d0af1"
 version = "0.3.1"
 
 [[deps.HydroModelLibrary]]
-deps = ["CSV", "ComponentArrays", "DataFrames", "HydroModelCore", "HydroModels", "NNlib", "Reexport", "SpecialFunctions", "Symbolics"]
+deps = ["ComponentArrays", "HydroModelCore", "HydroModels", "NNlib", "SpecialFunctions", "Symbolics"]
 path = "."
 uuid = "f34bc7f3-9d04-4ef8-b7a3-feb87ce2ba93"
 version = "0.1.2"
