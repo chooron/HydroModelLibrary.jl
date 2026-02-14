@@ -1,15 +1,15 @@
 module nash_cascade
 
-using .HydroModelCore
+using .HydroModels
 using .HydroModelLibrary: tosymbol
 
-struct NashCascade <: HydroModelCore.AbstractComponent
+struct NashCascade <: HydroModels.AbstractComponent
 
     function NashCascade(
         input::T, output::T, k::T, n::T,
         name::Symbol=:nash_cascade
     ) where T
-        infos = HydroModelCore.HydroInfos(
+        infos = HydroModels.HydroInfos(
             inputs=tosymbol(input),
             outputs=tosymbol(output),
             params=tosymbol.([k, n])

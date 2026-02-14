@@ -3,12 +3,10 @@ module HydroModelLibrary
 # using SpecialFunctions
 
 using HydroModels
-using HydroModelCore
-
 using ComponentArrays
 
 using NNlib
-using Symbolics: tosymbol
+using HydroModels: tosymbol
 
 ## -------------------------- smooth function -------------------------- ##
 step_func(x) = (tanh(5.0 * x) + 1.0) * 0.5
@@ -30,7 +28,7 @@ function get_params_bounds(model_name::Symbol)
     end
     model_parameters = getfield(HydroModelLibrary, model_name).model_parameters
     model_params_names = tosymbol.(model_parameters)
-    model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModelCore.getbounds.(model_parameters))
+    model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModels.getbounds.(model_parameters))
     return model_params_bounds
 end
 
@@ -40,7 +38,7 @@ function get_random_params(model_name::Symbol)
     end
     model_parameters = getfield(HydroModelLibrary, model_name).model_parameters
     model_params_names = tosymbol.(model_parameters)
-    model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModelCore.getbounds.(model_parameters))
+    model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModels.getbounds.(model_parameters))
     random_param_values = map(zip(model_params_names, model_params_bounds)) do (param_name, param_bound)
         param_name => rand(param_bound[1]:param_bound[2])
     end |> NamedTuple
@@ -67,6 +65,7 @@ AVAILABLE_MODELS = [
     :gsmsocont,
     :hbv_edu,
     :hbv,
+    :hbv96,
     :hillslope,
     :hmets,
     :hymod,

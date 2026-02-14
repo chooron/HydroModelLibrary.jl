@@ -12,7 +12,7 @@ using ..HydroModels: step_func
 model_variables = [S, P, Ea, Smax, Ep, Qt]
 
 # Model parameters
-@parameters Smax [description = "maximum soil moisture storage", bounds = (1, 2000), unit = "mm"]
+@parameters Smax [description = "maximum soil moisture storage", bounds = (10, 1000), unit = "mm"]
 model_parameters = [Smax]
 
 bucket1 = @hydrobucket :bucket1 begin

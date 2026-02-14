@@ -16,7 +16,7 @@ input = (P=df[!, "prec"], Ep=df[!, "pet"], T=df[!, "temp"], Tidx=tidx)
 test_input = stack(input, dims=1)
 
 # Model Setup: Load and initialize the Penman model
-model_nm = "hbv"
+model_nm = "collie1"
 model_module = HydroModelLibrary.load_model(Symbol(model_nm), reload=true)
 model = model_module.model
 model_variables = model_module.model_variables

@@ -1,6 +1,6 @@
 # Import required packages
 using CSV, DataFrames, Dates, ComponentArrays
-using HydroModels, HydroModelTools
+using HydroModels
 using DataInterpolations
 using Optimization
 using OptimizationBBO
@@ -20,7 +20,7 @@ warm_up = 365
 max_iter = 10000
 
 # Model Setup: Load Penman model and extract model metadata
-model_module = HydroModelLibrary.load_model(:penman)
+model_module = HydroModelLibrary.load_model(:xaj)
 model = model_module.model
 model_parameters = model_module.model_parameters
 model_params_names = tosymbol.(model_parameters)
@@ -38,7 +38,7 @@ ps_axes = getaxes(init_params)
 
 # Input Preparation: Convert input data to matrix format and set model configuration
 input_matrix = stack(input[model_input_names], dims=1)
-config = (solver=HydroModelTools.ODESolver(), interp=LinearInterpolation)
+config = (solver=HydroModels.ODESolver, interp=LinearInterpolation)
 
 # Objective Function Setup: Define metrics for model evaluation
 y_mean = mean(flow_vec)

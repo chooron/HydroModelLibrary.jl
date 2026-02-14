@@ -4,7 +4,7 @@ step_func(x) = (tanh(5.0 * x) + 1.0) * 0.5
 
 # Model variables
 ## Precipitation variables
-@variables P [description = "Observed precipitation intensity", unit="mm/d"]
+@variables P [description = "Observed precipitation intensity", unit = "mm/d"]
 @variables pn [description = "Net precipitation intensity"]
 @variables iu [description = "Upper to lower soil layer percolation intensity"]
 @variables il [description = "Lower to deep soil layer percolation intensity"]
@@ -59,7 +59,7 @@ model_variables = [P, pn, iu, il, fw, Ep, en, eu, el, ed, et, r, rs, ri, rg, rt,
 ## Surface parameters
 @parameters Aimp [description = "Impervious area ratio", bounds = (0.01, 0.2)]
 @parameters b [description = "Potential water capacity curve index", bounds = (0.1, 0.4)]
-@parameters Smax [description = "Average free water capacity", bounds = (10.0, 50.0)]
+@parameters Smax [description = "Average free water capacity", bounds = (10.0, 200.0)]
 @parameters ex [description = "Free water capacity curve index", bounds = (1.0, 1.5)]
 
 ## Discharge parameters
@@ -68,7 +68,8 @@ model_variables = [P, pn, iu, il, fw, Ep, en, eu, el, ed, et, r, rs, ri, rg, rt,
 @parameters ci [description = "Subsurface runoff dissipation coefficient", bounds = (0.5, 0.9)]
 @parameters cg [description = "Groundwater runoff dissipation coefficient", bounds = (0.98, 0.998)]
 @parameters Kf [description = "Subsurface runoff discharge coefficient", bounds = (1.0, 5.0)]
-model_parameters = [Ke, c, Wum, Wlm, Wdm, Aimp, b, Smax, ex, Ki, Kg, ci, cg, Kf]
+# model_parameters = [Ke, c, Wum, Wlm, Wdm, Aimp, b, Smax, ex, Ki, Kg, ci, cg, Kf]
+model_parameters = [Aimp, b, c,ex,Ki,Kg, ci,cg]
 
 # Soil water component
 soil_bucket = @hydrobucket :soil begin
@@ -113,7 +114,7 @@ land_routing_bucket = @hydrobucket :landroute begin
     fluxes = begin
         @hydroflux qi ~ -oi * log(ci)
         @hydroflux qg ~ -og * log(cg)
-        @hydroflux qt ~ rt + qi + qg
+        @hydroflux Qt ~ rt + qi + qg
     end
     dfluxes = begin
         @stateflux oi ~ ri - qi
@@ -121,27 +122,27 @@ land_routing_bucket = @hydrobucket :landroute begin
     end
 end
 
-# River routing component
-river_routing_bucket = @hydrobucket :riverroute begin
-    fluxes = begin
-        @hydroflux q1 ~ max(0.0, F1) / Kf
-        @hydroflux q2 ~ max(0.0, F2) / Kf
-        @hydroflux q3 ~ max(0.0, F3) / Kf
-        @hydroflux Qt ~ q2
-    end
-    dfluxes = begin
-        @stateflux F1 ~ qt - q1
-        @stateflux F2 ~ q1 - q2
-        @stateflux F3 ~ q2 - q3
-    end
-end
+# # River routing component
+# river_routing_bucket = @hydrobucket :riverroute begin
+#     fluxes = begin
+#         @hydroflux q1 ~ max(0.0, F1) / Kf
+#         @hydroflux q2 ~ max(0.0, F2) / Kf
+#         @hydroflux q3 ~ max(0.0, F3) / Kf
+#         @hydroflux Qt ~ q2 + q1 + q3
+#     end
+#     dfluxes = begin
+#         @stateflux F1 ~ qt - q1
+#         @stateflux F2 ~ q1 - q2
+#         @stateflux F3 ~ q2 - q3
+#     end
+# end
 
 # Complete model
 model = @hydromodel :xaj begin
     soil_bucket
     free_water_bucket
     land_routing_bucket
-    river_routing_bucket
+    # river_routing_bucket
 end
 
 end

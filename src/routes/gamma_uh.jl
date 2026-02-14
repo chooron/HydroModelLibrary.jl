@@ -1,13 +1,12 @@
 module gamma_uh
 
 using ..HydroModels
-using ..HydroModelCore
-using Symbolics: tosymbol
+using HydroModels: tosymbol
 using NNlib
 using ComponentArrays
 using SpecialFunctions
 
-struct GammaHydrograph{NT} <: HydroModelCore.AbstractComponent
+struct GammaHydrograph{NT} <: HydroModels.AbstractComponent
     name::Symbol
     lenF::Int
     infos::NT
@@ -17,7 +16,7 @@ struct GammaHydrograph{NT} <: HydroModelCore.AbstractComponent
         alpha::T, theta::T, lenF::Int=15;
         name::Symbol=:gamma_uh
     ) where {T}
-        infos = HydroModelCore.HydroInfos(
+        infos = HydroModels.HydroInfos(
             inputs=tosymbol.(inputs),
             outputs=tosymbol.(outputs),
             params=tosymbol.([alpha, theta])

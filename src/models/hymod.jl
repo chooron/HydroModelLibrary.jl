@@ -22,7 +22,7 @@ using ..HydroModels: step_func
 @variables Qt [description = "total flow", unit = "mm/d"]
 model_variables = [Sm, P, Ea, Pe, Ep, S, F1, Pf, Ps, Qf1, Sf1, Qf2, Sf2, Qf3, Sf3, Qs, Qt]
 # Model parameters
-@parameters Smax [description = "Maximumsoil moisture storage", bounds = (1, 2000), unit = "mm"]
+@parameters Smax [description = "Maximumsoil moisture storage", bounds = (10, 2000), unit = "mm"]
 @parameters b [description = "Contributing area curve shape parameter", bounds = (0, 10), unit = "-"]
 @parameters a [description = "Fraction of effective precipitation that is fast flow", bounds = (0, 1), unit = "-"]
 @parameters kf [description = "Runoffcoefficient", bounds = (0, 1), unit = "1/d"]
