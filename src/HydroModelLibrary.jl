@@ -57,6 +57,7 @@ AVAILABLE_MODELS = [
     :collie1,
     :collie2,
     :collie3,
+    :cemaneigegr4j,
     :echo,
     :exphydro,
     :flexb,
