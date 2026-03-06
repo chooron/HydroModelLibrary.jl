@@ -2,7 +2,7 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "da7b4a13f876c03378d224c5df2c8eec33f1a5c8"
+project_hash = "b892b58d3f8553edeac34b7368e27c5847a0c664"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -446,7 +446,7 @@ uuid = "57609f06-44cb-4626-8f6d-47ea844d0af1"
 version = "0.3.2"
 
 [[deps.HydroModelLibrary]]
-deps = ["CSV", "ComponentArrays", "DataFrames", "HydroModelCore", "HydroModels", "NNlib", "SpecialFunctions"]
+deps = ["CSV", "ComponentArrays", "DataFrames", "Dates", "HydroModelCore", "HydroModels", "NNlib", "SpecialFunctions", "Statistics"]
 path = "."
 uuid = "f34bc7f3-9d04-4ef8-b7a3-feb87ce2ba93"
 version = "0.1.3"
@@ -460,7 +460,7 @@ version = "0.6.2"
     [deps.HydroModels.extensions]
     HydroModelsBMIExt = ["BasicModelInterface", "Dates"]
     HydroModelsDataInterpolationsExt = "DataInterpolations"
-    HydroModelsOptimizationExt = ["Optimization", "SciMLBase", "ComponentArrays"]
+    HydroModelsOptimizationExt = ["Optimization", "SciMLBase", "ComponentArrays", "Statistics"]
     HydroModelsOrdinaryDiffEqExt = ["SciMLBase", "OrdinaryDiffEq", "SciMLSensitivity"]
     HydroModelsRastersExt = ["Rasters", "NCDatasets", "Statistics"]
     HydroModelsYAMLExt = ["YAML", "CSV", "DataFrames"]
