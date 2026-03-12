@@ -31,13 +31,13 @@ using HydroModelLibrary
     @test length(result.simulated.Qyear) == length(result.metadata.years)
     @test length(result.observed.Qyear) == length(result.metadata.years)
 
-    @test result.percentage_error.RR ¡Ö 20.0 atol = 1e-8
+    @test result.percentage_error.RR â‰ˆ 20.0 atol = 1e-8
     @test result.adequate.RR
     @test all(result.adequate.Qmonth)
     @test all(result.adequate.Qyear)
 
     result_bad = evaluate_adequacy_assessment(2.0 .* q_obs, q_obs, p, dates)
-    @test result_bad.percentage_error.RR ¡Ö 100.0 atol = 1e-8
+    @test result_bad.percentage_error.RR â‰ˆ 100.0 atol = 1e-8
     @test !result_bad.adequate.RR
 
     bad_dates = [Date(2020, 1, 1), Date(2020, 1, 3)]

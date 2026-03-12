@@ -1,3 +1,6 @@
+using Pkg
+Pkg.activate(".")
+
 using DifferentiationInterface
 using Enzyme
 using DifferentialEquations, SciMLSensitivity

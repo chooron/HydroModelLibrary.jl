@@ -144,7 +144,8 @@ using .channel_route: ChannelRoute,
                       muskingum_route,
                       nash_cascade_route,
                       hydrologic_route
-export GammaHydrograph,
+export @channelroute,
+       GammaHydrograph,
        ROUTE_DUMP,
        ROUTE_GAMMA_CONVOLUTION,
        ROUTE_TRI_CONVOLUTION,
@@ -540,6 +541,10 @@ export load_sample_data, list_sample_data, get_sample_data_info,
        load_sample_data_for_model, AVAILABLE_SAMPLE_DATA
 
 end
+
+
+
+
 
 
 

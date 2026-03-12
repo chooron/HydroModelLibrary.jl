@@ -29,7 +29,8 @@ using .unithydro: ROUTE_DUMP,
                   build_unit_hydrograph,
                   toc_mcdermott_pilgrim,
                   time_of_concentration
-using .channel_route: build_channel_route
+using .channel_route: build_channel_route,
+                      ChannelRoute
 
 export ROUTE_DUMP,
        ROUTE_GAMMA_CONVOLUTION,
@@ -48,6 +49,7 @@ export ROUTE_DUMP,
        TOC_WILLIAMS_1922,
        build_unit_hydrograph,
        build_channel_route,
+       ChannelRoute,
        toc_mcdermott_pilgrim,
        time_of_concentration
 end
@@ -69,6 +71,7 @@ using .RouteHarness: ROUTE_DUMP,
                      TOC_WILLIAMS_1922,
                      build_unit_hydrograph,
                      build_channel_route,
+                     ChannelRoute,
                      toc_mcdermott_pilgrim,
                      time_of_concentration
 
@@ -199,6 +202,8 @@ using .RouteHarness: ROUTE_DUMP,
 
     @testset "Single-Reach Channel Routing" begin
         no_route = build_channel_route(ROUTE_NONE; input=q_in, output=q_out)
+        @test no_route isa ChannelRoute
+        @test no_route isa ChannelRoute
         @test no_route(impulse_short, ComponentVector(params=NamedTuple())) == impulse_short
 
         plug_route = build_channel_route(
@@ -209,6 +214,7 @@ using .RouteHarness: ROUTE_DUMP,
             wave_celerity=wave_celerity,
             max_lag=6,
         )
+        @test plug_route isa ChannelRoute
         plug_out = plug_route(impulse_short, ComponentVector(params=(reach_length=2.0, wave_celerity=1.0)))
         @test plug_out[1, 1] == 0.0
         @test plug_out[1, 2] == 0.0
@@ -223,6 +229,7 @@ using .RouteHarness: ROUTE_DUMP,
             diffusivity=diffusivity,
             max_lag=8,
         )
+        @test diff_route isa ChannelRoute
         diff_out = diff_route(impulse_short, ComponentVector(params=(reach_length=2.0, wave_celerity=1.0, diffusivity=0.5)))
         @test size(diff_out) == size(impulse_short)
         @test all(diff_out .>= 0)
@@ -235,6 +242,7 @@ using .RouteHarness: ROUTE_DUMP,
             storage_time=storage_time,
             max_lag=8,
         )
+        @test linear_storage_route isa ChannelRoute
         linear_storage_out = linear_storage_route(impulse_short, ComponentVector(params=(storage_time=1.0,)))
         @test isapprox(linear_storage_out[1, 1], 0.5; atol=1.0e-8)
         @test isapprox(linear_storage_out[1, 2], 0.25; atol=1.0e-8)
@@ -248,6 +256,7 @@ using .RouteHarness: ROUTE_DUMP,
             n_reservoirs=n_reservoirs,
             max_lag=12,
         )
+        @test nash_cascade isa ChannelRoute
         nash_cascade_out = nash_cascade(impulse_short, ComponentVector(params=(storage_time=1.0, n_reservoirs=3.0)))
         @test size(nash_cascade_out) == size(impulse_short)
         @test all(nash_cascade_out .>= 0)
@@ -260,6 +269,7 @@ using .RouteHarness: ROUTE_DUMP,
             output=q_out,
             storage_time=storage_time,
         )
+        @test storage_route isa ChannelRoute
         storage_out = storage_route(impulse_short, ComponentVector(params=(storage_time=1.0,)))
         @test isapprox(storage_out[1, 1], 1 / 3; atol=1.0e-8)
         @test isapprox(storage_out[1, 2], 4 / 9; atol=1.0e-8)
@@ -272,6 +282,7 @@ using .RouteHarness: ROUTE_DUMP,
             muskingum_k=muskingum_k,
             muskingum_x=muskingum_x,
         )
+        @test muskingum isa ChannelRoute
         muskingum_out = muskingum(impulse_short, ComponentVector(params=(muskingum_k=1.0, muskingum_x=0.0)))
         @test isapprox(muskingum_out, storage_out; atol=1.0e-8)
 
@@ -282,6 +293,7 @@ using .RouteHarness: ROUTE_DUMP,
             storage_coeff=hydro_k,
             storage_exponent=hydro_m,
         )
+        @test hydrologic isa ChannelRoute
         hydrologic_out = hydrologic(impulse_short, ComponentVector(params=(hydro_k=1.0, hydro_m=1.2)))
         @test size(hydrologic_out) == size(impulse_short)
         @test all(isfinite, hydrologic_out)
@@ -379,6 +391,10 @@ using .RouteHarness: ROUTE_DUMP,
         @test_throws ArgumentError build_channel_route(ROUTE_NONE; input=q_in, output=q_out, adjacency=[0.0 1.0; 1.0 0.0])
     end
 end
+
+
+
+
 
 
 
