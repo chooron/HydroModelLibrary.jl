@@ -5,130 +5,167 @@
 
 ## Overview
 
-A hydrological modeling library built upon [HydroModels.jl](https://github.com/chooron/HydroModels.jl), incorporating models primarily sourced from [MARRMoT](https://github.com/wknoben/MARRMoT) and additional models like ExpHydro. All models are validated and ready for direct use.
+`HydroModelLibrary.jl` is a hydrological model library built on top of [HydroModels.jl](https://github.com/chooron/HydroModels.jl). It collects multiple conceptual rainfall-runoff models, mainly from [MARRMoT](https://github.com/wknoben/MARRMoT), and provides example workflows for simulation, calibration, and result inspection.
 
-## ✨ Key Features
+## Features
 
-- **Model Implementation**: Diverse hydrological models, with ongoing efforts for runoff computation modules.
-- **Examples**: Comprehensive examples for model computation and parameter optimization.
+- Multiple hydrological model implementations that can be loaded directly
+- Unified access to model parameters, parameter bounds, states, inputs, and outputs
+- Example scripts under `example/` for running models, batch calibration, and checking saved results
 
-## 🚀 Installation
+## Installation
+
+Install the registered package:
 
 ```julia
 using Pkg
 Pkg.add("HydroModelLibrary")
 ```
 
-Or install from GitHub for the latest development version:
+Or install the latest development version from GitHub:
 
 ```julia
+using Pkg
 Pkg.add(url="https://github.com/chooron/HydroModelLibrary.jl")
 ```
 
-## 📚 Quick Start
+## Quick Start
 
-### Example 1: Running a Hydrological Model
-
-Demonstrates how to load a model, prepare input data, and run simulations.
+### Run a single model
 
 ```julia
+using CSV
+using DataFrames
+using ComponentArrays
+using DataInterpolations
+using HydroModels
 using HydroModelLibrary
-using CSV, DataFrames, ComponentArrays
-using HydroModels, HydroModelTools
-using DataInterpolations # For input interpolation
 
-# Load sample data (assuming 'data/marrmot/3604000.csv' exists)
 df = CSV.read("data/marrmot/3604000.csv", DataFrame)
-input_data = (P=df[!, "prec"], Ep=df[!, "pet"], T=df[!, "temp"])
+input_data = (P=df.prec, Ep=df.pet, T=df.temp)
 
-# Load a specific model, e.g., "sacramento"
-model_name = "sacramento"
-model_module = HydroModelLibrary.load_model(Symbol(model_name), reload=true)
+model_module = HydroModelLibrary.load_model(:sacramento)
 model = model_module.model
 model_input_names = HydroModels.get_input_names(model)
 model_state_names = HydroModels.get_state_names(model)
 
-# Prepare initial parameters and states
-init_params = HydroModelLibrary.get_random_params(model_name)
+init_params = HydroModelLibrary.get_random_params("sacramento")
 init_states = NamedTuple{Tuple(model_state_names)}(zeros(length(model_state_names))) |> ComponentVector
+input_matrix = stack(input_data[model_input_names], dims=1)
 
-# Prepare input array
-input_arr = stack(input_data[model_input_names], dims=1)
+config = (; solver=HydroModels.ODESolver, interp=LinearInterpolation)
+results = model(input_matrix, init_params; initstates=init_states, config=config)
 
-# Run the model
-config = (; solver=HydroModelTools.ODESolver(), interp=LinearInterpolation)
-results = model(input_arr, init_params, initstates=init_states, config=config)
-
-println("Model simulation completed. Results dimensions: ", size(results))
-# Further processing and visualization of results can be done here.
+println(size(results))
 ```
 
-### Example 2: Gradient-Based Parameter Optimization
+### Calibrate `hbv_edu` on CAMELS PET v2
 
-Illustrates how to set up and run parameter optimization for a hydrological model.
+The main batch-calibration example is [`example/calibrate_hbv_camels_petv2.jl`](example/calibrate_hbv_camels_petv2.jl). It calibrates `hbv_edu` basin by basin on the CAMELS PET v2 dataset and writes per-basin and batch summary results to disk.
 
-```julia
-using HydroModelLibrary
-using CSV, DataFrames, ComponentArrays
-using HydroModels, HydroModelTools
-using DataInterpolations
-using Optimization, OptimizationBBO # For optimization algorithms
-using Distributions
-using Symbolics # To work with symbolic parameters
+Current script behavior:
 
-# Load sample data and observed flow
-df = CSV.read("data/marrmot/3604000.csv", DataFrame)
-input_data = (P=df[!, "prec"], Ep=df[!, "pet"], T=df[!, "temp"])
-observed_flow = df[!, "flow"]
+- Working directory should be `example/`
+- Data path is read from `.env`
+- Environment variable name is `CAMESL_DATASET_PATH`
+- Objective function defaults to `inverse KGE`
+- Training period is `1989-01-01` to `1998-12-31`
+- Test period is `1999-01-01` to `2009-12-31`
+- Warm-up length is `365` days
+- Output directory is `example/calibration_results/hbv_invkge/`
 
-# Load a specific model, e.g., "penman"
-model_module = HydroModelLibrary.load_model(:penman)
-model = model_module.model
-model_parameters = model_module.model_parameters
-model_params_names = tosymbol.(model_parameters)
-model_input_names = HydroModels.get_input_names(model)
+Configure the dataset path in `example/.env`:
 
-# Define objective function (e.g., R2 loss)
-function obj_func(p, _)
-    params = ComponentVector(p, getaxes(HydroModelLibrary.get_random_params("penman"))) # Reconstruct ComponentVector
-    input_matrix = stack(input_data[model_input_names], dims=1)
-    config = (solver=HydroModelTools.ODESolver(), interp=LinearInterpolation)
-    predictions = model(input_matrix, params; config=config)
-    predicted_flow = predictions[end, :] # Assuming flow is the last output
-
-    # Calculate R2 loss (simplified for demonstration)
-    y_mean = mean(observed_flow[365:end]) # Warm-up period
-    sum_sq_res = sum((predicted_flow[365:end] .- observed_flow[365:end]) .^ 2)
-    sum_sq_tot = sum((observed_flow[365:end] .- y_mean) .^ 2)
-    return sum_sq_res / sum_sq_tot # 1 - R2 for minimization
-end
-
-# Prepare initial parameters and bounds
-init_params = HydroModelLibrary.get_random_params(:penman)
-model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModels.getbounds.(model_parameters))
-lb = first.(model_params_bounds |> collect)
-ub = last.(model_params_bounds |> collect)
-
-# Setup and run optimization
-optf = Optimization.OptimizationFunction(obj_func, Optimization.AutoForwardDiff())
-optprob = Optimization.OptimizationProblem(optf, Vector(init_params), lb=lb, ub=ub)
-sol = Optimization.solve(optprob, BBO_adaptive_de_rand_1_bin_radiuslimited(), maxiters=1000)
-
-println("Optimization completed. Optimal parameters: ", ComponentVector(sol.u, getaxes(init_params)))
+```env
+CAMESL_DATASET_PATH=G:\Dataset\camels_dataset_petv2.npz
 ```
 
-## 🔗 Ecosystem Integration
+Run from the `example/` directory:
 
-HydroModelLibrary.jl integrates seamlessly with the Julia ecosystem, leveraging:
-- **[HydroModels.jl](https://github.com/chooron/HydroModels.jl)**: The foundational modeling framework.
-- **[SciML](https://sciml.ai/)**: For ODE solving, sensitivity analysis, and optimization.
-- **[ComponentArrays.jl](https://github.com/jonniedie/ComponentArrays.jl)**: For named parameter arrays.
-- **[Symbolics.jl](https://github.com/JuliaSymbolics/Symbolics.jl)**: For symbolic computation.
-- **[Optimization.jl](https://github.com/SciML/Optimization.jl)**: For advanced optimization algorithms.
+```powershell
+cd E:\JlCode\HydroModelLibrary\example
+julia --project=. -e "using Pkg; Pkg.instantiate()"
+julia --project=. calibrate_hbv_camels_petv2.jl
+```
 
-## 📝 Citation
+## Input Data
 
-If you use HydroModelLibrary.jl in your research, please cite:
+`example/calibrate_hbv_camels_petv2.jl` expects an `.npz` file with at least:
+
+- `forcing`, shaped as `(time, basin, variable)`
+- `target`, shaped as `(time, basin)`
+
+The script interprets `forcing[:, :, 1:3]` as:
+
+- `P`: precipitation
+- `T`: temperature
+- `Ep`: potential evapotranspiration
+
+It also builds `Tidx = dayofyear.(dates)` as an additional input required by `hbv_edu`.
+
+## Output Files
+
+For each processed basin, the script writes:
+
+```text
+example/calibration_results/hbv_invkge/basin_<idx>.jld2
+```
+
+Each per-basin result file stores:
+
+- `params`
+- `loss_history`
+- `train_kge`
+- `test_kge`
+- `train_loss`
+- `test_loss`
+- `elapsed_seconds`
+- `cumulative_time`
+- `recorder_df`
+
+After the loop finishes, the script also writes:
+
+```text
+example/calibration_results/hbv_invkge/batch_metrics.jld2
+```
+
+This batch file stores:
+
+- `metrics_df`
+- `all_params`
+- `all_recorders`
+
+## Notes
+
+- The current loop is `for select_idx in 2:n_catchments`, so `basin_1` is skipped by default
+- If a basin result file already exists, the script skips recalibration for that basin and reuses the saved outputs
+- `forcing` and `target` must have the same time length
+- Both train and test splits must be longer than the `365`-day warm-up
+
+## Example Scripts
+
+Other scripts under `example/` include:
+
+- `run_model.jl`
+- `load_sample_data_example.jl`
+- `calibrate_hymod_camels_petv2.jl`
+- `calibrate_xaj_camels_petv2.jl`
+- `calibrate_collie1_camels_petv2.jl`
+- `check_calibrate.jl`
+
+## Ecosystem
+
+This package relies mainly on:
+
+- [HydroModels.jl](https://github.com/chooron/HydroModels.jl)
+- [SciML](https://sciml.ai/)
+- [ComponentArrays.jl](https://github.com/jonniedie/ComponentArrays.jl)
+- [Optimization.jl](https://github.com/SciML/Optimization.jl)
+- [JLD2.jl](https://github.com/JuliaIO/JLD2.jl)
+
+## Citation
+
+If you use `HydroModelLibrary.jl` in research, please cite:
 
 ```bibtex
 @software{hydromodellibrary_jl,
@@ -139,10 +176,10 @@ If you use HydroModelLibrary.jl in your research, please cite:
 }
 ```
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
-## 👤 Author
+## Author
 
 **Jing Xin** ([@chooron](https://github.com/chooron))
