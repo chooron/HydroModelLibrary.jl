@@ -25,22 +25,74 @@ function load_model(model_name::Symbol; reload=false)
     return _get_library_binding(model_name)
 end
 
-function get_params_bounds(model_name::Symbol)
+function _get_model_parameters(model_name::Symbol)
     model_module = load_model(model_name)
-    model_parameters = model_module.model_parameters
-    model_params_names = tosymbol.(model_parameters)
-    model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModels.getbounds.(model_parameters))
-    return model_params_bounds
+
+    model_parameters = try
+        Base.invokelatest(getproperty, model_module, :model_parameters)
+    catch err
+        if err isa UndefVarError
+            throw(ArgumentError(
+                "Model '$model_name' does not define model_parameters in its module wrapper.",
+            ))
+        end
+        rethrow(err)
+    end
+
+    model_parameters isa AbstractVector || throw(ArgumentError(
+        "Model '$model_name' has invalid model_parameters type: $(typeof(model_parameters)).",
+    ))
+    isempty(model_parameters) &&
+        throw(ArgumentError("Model '$model_name' exposes an empty model_parameters list."))
+
+    return model_parameters
+end
+
+function _get_param_names_and_bounds(model_name::Symbol, model_parameters)
+    param_names = Symbol.(tosymbol.(model_parameters))
+    bounds = Vector{Tuple{Float64,Float64}}(undef, length(model_parameters))
+
+    for (idx, param) in enumerate(model_parameters)
+        raw_bounds = try
+            Base.invokelatest(HydroModels.getbounds, param)
+        catch
+            throw(ArgumentError(
+                "Missing bounds for parameter '$param' in model '$model_name'.",
+            ))
+        end
+
+        length(raw_bounds) == 2 || throw(ArgumentError(
+            "Invalid bounds for parameter '$param' in model '$model_name': expected 2 values.",
+        ))
+
+        lo = Float64(raw_bounds[1])
+        hi = Float64(raw_bounds[2])
+        lo <= hi || throw(ArgumentError(
+            "Invalid bounds for parameter '$param' in model '$model_name': lower bound $lo is greater than upper bound $hi.",
+        ))
+
+        bounds[idx] = (lo, hi)
+    end
+
+    return param_names, bounds
+end
+
+function get_params_bounds(model_name::Symbol)
+    model_parameters = _get_model_parameters(model_name)
+    param_names, bounds = _get_param_names_and_bounds(model_name, model_parameters)
+    return NamedTuple{Tuple(param_names)}(Tuple(bounds))
 end
 
 function get_random_params(model_name::Symbol)
-    model_module = load_model(model_name)
-    model_parameters = model_module.model_parameters
-    model_params_names = tosymbol.(model_parameters)
-    model_params_bounds = NamedTuple{Tuple(model_params_names)}(HydroModels.getbounds.(model_parameters))
-    random_param_values = map(zip(model_params_names, model_params_bounds)) do (param_name, param_bound)
-        param_name => rand(param_bound[1]:param_bound[2])
-    end |> NamedTuple
+    model_parameters = _get_model_parameters(model_name)
+    param_names, bounds = _get_param_names_and_bounds(model_name, model_parameters)
+
+    sampled_values = ntuple(length(param_names)) do i
+        lo, hi = bounds[i]
+        lo == hi ? lo : lo + (hi - lo) * rand()
+    end
+
+    random_param_values = NamedTuple{Tuple(param_names)}(sampled_values)
     init_params = ComponentVector(params=random_param_values)
     return init_params
 end

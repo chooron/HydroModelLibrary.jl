@@ -1,6 +1,6 @@
 name = "HydroModelLibrary"
 uuid = "f34bc7f3-9d04-4ef8-b7a3-feb87ce2ba93"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["jingx <50790703+chooron@users.noreply.github.com>"]
 
 [deps]
@@ -20,7 +20,7 @@ CSV = "0.10"
 ComponentArrays = "0.15"
 DataFrames = "1"
 Dates = "1.11"
-HydroModels = "0.6.2"
+HydroModels = "0.6.2, 0.6.3"
 LinearAlgebra = "1.12"
 NNlib = "0.9"
 SpecialFunctions = "2"
